@@ -1,0 +1,4 @@
+MongoDB
+
+use messenger;
+db.createCollection("users");
