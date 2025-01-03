@@ -35,19 +35,18 @@ async function registerUser(username, email, password){
             error.statusCode = 409;
             throw error;
         }else{
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
-
             const newUser = {
                 username: username,
                 email: email,
-                password: hashedPassword,
+                password: password,
                 chats: [],
                 createdAt: new Date()
             }
 
             const result = await userCollection.insertOne(newUser);
-            return result;
+            console.log(newUser);
+            
+            return newUser;
         }
     } catch (error) {
         console.error("Ошибка при регистрации пользователя:", error);
@@ -58,9 +57,10 @@ async function registerUser(username, email, password){
 async function verificateUser(email, password){
     try {
         const foundUser = await userCollection.findOne({ email });
-        const isPasswordValid = await bcrypt.compare(password, foundUser.password);
+        const isPasswordValid = (foundUser) ? await bcrypt.compare(password, foundUser.password) : null;
 
         if(!foundUser || !isPasswordValid){
+            
             const error = new Error("Неправильный логин или пароль");
             error.statusCode = 401;
             throw error;

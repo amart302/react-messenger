@@ -45,7 +45,16 @@ form span a:hover{
 }
 .form-group input{
     border: solid 1px #666666;
-    color: #666666;
+    color: #231F20;
     border-radius: 0;
     padding: 10px;
+    transition: all 0.2s;
+}
+.form-group input:focus{
+    outline: none;
+}
+.error-message{
+    color: red;
+    font-size: 13px;
+    grid-column: 2;
 }

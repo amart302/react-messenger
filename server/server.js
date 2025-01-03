@@ -13,13 +13,16 @@ app.use(express.json());
 
 app.post("/loginData", async (req, res) => {
     const { email, password } = req.body;
-
+    
     try {
         const result = await verificateUser(email, password);
-        res.status(201).json({ message: "Данные получены успешно", redirect: "/" });
+        console.log(result);
+        delete result.confirmPassword;
+
+        res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result });
     } catch (error) {
-        console.log(error);
-        res.status(error.statusCode || 500).json({ message: error.message || "Ошибка сервера при обработке данных" });
+        if(!error.statusCode) error.statusCode = 500;
+        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
 })
 
@@ -29,13 +32,18 @@ app.post("/registerData", async (req, res) => {
     try {
         console.log(req.body);
         const result = await registerUser(username, email, password);
-        res.status(201).json({ message: "Данные получены успешно", redirect: "/" });
+        console.log(result);
+        delete result.confirmPassword;
+        
+        res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result});
 
     } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message || "Ошибка сервера при обработке данных" });
+        if(!error.statusCode) error.statusCode = 500;
+        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
 })
 
 app.listen(port, () => {
+    console.clear();
     console.log(`Сервер запущен на http://localhost:${port}`); 
 });
