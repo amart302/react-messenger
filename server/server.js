@@ -3,7 +3,7 @@ const cors = require("cors");
 const app = express();
 const port = 8080;
 
-const { registerUser, verificateUser } = require("./db")
+const { registerUser, verificateUser, findUser } = require("./db");
 
 app.use(cors({
     origin: "http://localhost:3000",
@@ -11,7 +11,7 @@ app.use(cors({
 }))
 app.use(express.json());
 
-app.post("/loginData", async (req, res) => {
+app.post("/api/loginData", async (req, res) => {
     const { email, password } = req.body;
     
     try {
@@ -26,7 +26,7 @@ app.post("/loginData", async (req, res) => {
     }
 })
 
-app.post("/registerData", async (req, res) => {
+app.post("/api/registerData", async (req, res) => {
     const { username, email, password } = req.body;
 
     try {
@@ -39,6 +39,18 @@ app.post("/registerData", async (req, res) => {
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
+    }
+})
+
+app.get("/api/findUser", async (req, res) => {
+    const username = req.query.username;
+    try {
+        const result = await findUser(username);
+        
+        res.status(201).json({ message: "Пользователь найден", foundUser: result });
+    } catch (error) {
+        if(!error.statusCode) error.statusCode = 500;
+        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message })
     }
 })
 

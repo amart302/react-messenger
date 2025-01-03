@@ -74,4 +74,21 @@ async function verificateUser(email, password){
     }
 }
 
-module.exports = { registerUser, verificateUser }
+async function findUser(username){
+    try {
+        const foundUser = await userCollection.findOne({ username });
+
+        if(foundUser){
+            return foundUser;
+        }else{
+            const error = new Error("Пользователь не был найден");
+            error.statusCode = 404;
+            throw error;
+        }
+    } catch (error) {
+        console.error("Ошибка при поиске пользователя:", error);
+        throw error;
+    }
+}
+
+module.exports = { registerUser, verificateUser, findUser }
