@@ -35,17 +35,18 @@ async function registerUser(username, email, password){
             error.statusCode = 409;
             throw error;
         }else{
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
             const newUser = {
                 username: username,
                 email: email,
-                password: password,
+                password: hashedPassword,
                 chats: [],
                 createdAt: new Date()
             }
 
             const result = await userCollection.insertOne(newUser);
-            console.log(newUser);
-            
             return newUser;
         }
     } catch (error) {

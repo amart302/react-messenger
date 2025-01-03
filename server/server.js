@@ -16,7 +16,7 @@ app.post("/loginData", async (req, res) => {
     
     try {
         const result = await verificateUser(email, password);
-        console.log(result);
+        // console.log(result);
         delete result.confirmPassword;
 
         res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result });
@@ -30,9 +30,8 @@ app.post("/registerData", async (req, res) => {
     const { username, email, password } = req.body;
 
     try {
-        console.log(req.body);
         const result = await registerUser(username, email, password);
-        console.log(result);
+        // console.log(result);
         delete result.confirmPassword;
         
         res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result});

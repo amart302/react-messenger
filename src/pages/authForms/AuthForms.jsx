@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import bcrypt from "bcryptjs";
 
 import "./authForms.css";
 import axios from "axios";
@@ -11,17 +10,6 @@ export default function AuthForms(){
     const [ errorMessage, setErrorMessage ] = useState(false);
     const [ switchingForms, setSwitchingForms ] = useState(false);
     const { register, handleSubmit, reset, formState: { errors }} = useForm();
-
-    const hashedPassword = async (password) => {
-        try {
-            const salt = await bcrypt.genSalt(10);
-            const hash = await bcrypt.hash(password, salt);
-            return hash;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
     
     const onSubmitLogin = (data) => {
         setErrorMessage(false);
@@ -43,7 +31,6 @@ export default function AuthForms(){
     const onSubmitRegister = async (data) => {
         setErrorMessage(false);
         if(data.password == data.confirmPassword){
-            data.password = await hashedPassword(data.password);
 
             axios.post("http://localhost:8080/registerData", data)
             .then(res => {
