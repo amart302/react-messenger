@@ -1,50 +1,57 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import "./authForms.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { clearUser } from "../../store/reducer";
 
 export default function AuthForms(){
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [ errorMessage, setErrorMessage ] = useState(false);
     const [ switchingForms, setSwitchingForms ] = useState(false);
     const { register, handleSubmit, reset, formState: { errors }} = useForm();
+
+    useEffect(() => {
+        sessionStorage.setItem("user", null);
+        dispatch(clearUser());
+    }, []);
     
-    const onSubmitLogin = (data) => {
+    const onSubmitLogin = async (data) => {
         setErrorMessage(false);
         delete data.username;
         delete data.confirmPassword;
-
-        axios.post("http://localhost:8080/loginData", data)
-            .then(res => {
-                delete res.data.user.password;
-                sessionStorage.setItem("user", JSON.stringify(res.data.user));
-                
-                setTimeout(() => navigate(res.data.redirect), 400);
-            })
-            .catch(error => {
-                setErrorMessage(error.response.data.message);
-            })
-    }
+    
+        try {
+            const res = await axios.post("http://localhost:8080/api/loginData", data);
+            delete res.data.user.password;
+            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+            
+            setTimeout(() => navigate(res.data.redirect), 400);
+        } catch (error) {
+            setErrorMessage(error.response.data.message);
+        }
+    };
 
     const onSubmitRegister = async (data) => {
         setErrorMessage(false);
-        if(data.password == data.confirmPassword){
-
-            axios.post("http://localhost:8080/registerData", data)
-            .then(res => {
-                delete res.data.user.password;
-                sessionStorage.setItem("user", JSON.stringify(res.data.user));
-                setTimeout(() => navigate(res.data.redirect), 400);
-            })
-            .catch(error => {
-                setErrorMessage(error.response.data.message);
-            })
-        }else{
+    
+        if (data.password !== data.confirmPassword) {
             setErrorMessage("Пароли не совпадают");
         }
-    }
+    
+        try {
+            const res = await axios.post("http://localhost:8080/api/registerData", data);
+
+            delete res.data.user.password;
+            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+            setTimeout(() => navigate(res.data.redirect), 400);
+        } catch (error) {
+            setErrorMessage(error.response?.data?.message || "Произошла ошибка при регистрации");
+        }
+    };
 
     return(
         <div className="forms-container">

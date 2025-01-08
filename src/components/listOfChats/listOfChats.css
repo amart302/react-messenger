@@ -1,0 +1,63 @@
+aside{
+    width: 300px;
+    height: calc(100vh - 20px);
+    padding: 10px 10px;
+    border-right: solid 1px;
+}
+.search-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.search-input-wrapper{
+    width: 100%;
+    height: 26px;
+    display: grid;
+    grid-template-columns: 20px 1fr 1fr;
+    align-items: center;
+    gap: 4px;
+    border: solid 1px #231F20;
+    border-radius: 6px;
+    padding-left: 6px;
+}
+.search-input-wrapper button{
+    height: 100%;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.search-input-wrapper button:hover{
+    background-color: rgb(221, 221, 221);
+}
+.search-icon{
+    width: 20px;
+}
+.search-input{
+    border: none;
+    outline: none;
+    font-size: 15px;
+}
+.chats-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 10px;
+}
+.found-users-container{
+    display: flex;
+    justify-content: center;
+    padding-block: 10px;
+}
+.found-user{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding-inline: 6px;
+}
+.found-user img{
+    width: 60px;
+}

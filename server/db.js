@@ -1,4 +1,4 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ReturnDocument } = require("mongodb");
 const bcrypt = require("bcrypt");
 
 const uri = "mongodb://localhost:27017/";
@@ -6,12 +6,14 @@ const client = new MongoClient(uri);
 
 let db;
 let userCollection;
+let chatsCollection;
 
 async function connect(){
     try {
         await client.connect();
         db = client.db("messenger");
         userCollection = db.collection("users");
+        chatsCollection = db.collection("chats");
         console.log("Подключение к MongoDB  успешно");
     } catch (error) {
         console.error("Ошибка подключения в MongoDB");
@@ -76,12 +78,16 @@ async function verificateUser(email, password){
 
 async function findUser(username){
     try {
-        const foundUser = await userCollection.findOne({ username });
+        const foundUser = await userCollection.findOne({ username: { $regex: new RegExp(username, "i") } });
 
         if(foundUser){
+            delete foundUser.email;
+            delete foundUser.password;
+            delete foundUser.chats;
+            
             return foundUser;
         }else{
-            const error = new Error("Пользователь не был найден");
+            const error = new Error("Пользователь не найден");
             error.statusCode = 404;
             throw error;
         }
@@ -91,4 +97,37 @@ async function findUser(username){
     }
 }
 
-module.exports = { registerUser, verificateUser, findUser }
+async function createChat(id1, id2){
+    try {
+        const member1 = await userCollection.findOne({ id1 });
+        const member2 = await userCollection.findOne({ id2 });
+
+        const chat = {
+            member1: id1,
+            member2: id2,
+            messages: [],
+            createdAt: new Date()
+        };
+
+        chatsCollection.insertOne(chat);
+
+        const updataMember1 = await userCollection.findOneAndUpdate(
+            { _id: id1 },
+            { $push: { chats: createChat.insertedId } },
+            { returnDocument: "after" }
+        );
+
+        const updataMember2 = await userCollection.findOneAndUpdate(
+            { _id: id2 },
+            { $push: { chats: createChat.insertedId } }
+        );
+
+        console.log("Чат успешно создан");
+        return updataMember1;
+    } catch (error) {
+        console.error("Ошибка при попытке создать чат:", error);
+        throw error;
+    }
+}
+
+module.exports = { registerUser, verificateUser, findUser, createChat }
