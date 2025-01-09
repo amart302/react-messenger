@@ -5,7 +5,6 @@ import "./authForms.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { clearUser } from "../../store/reducer";
 
 export default function AuthForms(){
     const navigate = useNavigate();
@@ -15,8 +14,8 @@ export default function AuthForms(){
     const { register, handleSubmit, reset, formState: { errors }} = useForm();
 
     useEffect(() => {
-        sessionStorage.setItem("user", null);
-        dispatch(clearUser());
+        sessionStorage.setItem("userId", null);
+        dispatch({type: "CLEAR_USER"});
     }, []);
     
     const onSubmitLogin = async (data) => {
@@ -27,7 +26,7 @@ export default function AuthForms(){
         try {
             const res = await axios.post("http://localhost:8080/api/loginData", data);
             delete res.data.user.password;
-            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+            sessionStorage.setItem("userId", JSON.stringify(res.data.user._id));
             
             setTimeout(() => navigate(res.data.redirect), 400);
         } catch (error) {
@@ -46,7 +45,7 @@ export default function AuthForms(){
             const res = await axios.post("http://localhost:8080/api/registerData", data);
 
             delete res.data.user.password;
-            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+            sessionStorage.setItem("userId", JSON.stringify(res.data.user._id));
             setTimeout(() => navigate(res.data.redirect), 400);
         } catch (error) {
             setErrorMessage(error.response?.data?.message || "Произошла ошибка при регистрации");

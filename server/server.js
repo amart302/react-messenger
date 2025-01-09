@@ -3,7 +3,7 @@ const cors = require("cors");
 const app = express();
 const port = 8080;
 
-const { registerUser, verificateUser, findUser, createChat } = require("./db");
+const { registerUser, verificateUser, getUserData, findUser, createChat } = require("./db");
 
 app.use(cors({
     origin: "http://localhost:3000",
@@ -36,6 +36,18 @@ app.post("/api/registerData", async (req, res) => {
         
         res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result});
 
+    } catch (error) {
+        if(!error.statusCode) error.statusCode = 500;
+        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
+    }
+})
+
+app.get("/api/getUserData", async (req, res) => {
+    const userId = req.query.userId;
+    try {
+        const result = await getUserData(userId);
+
+        res.status(201).json({ userData: result })
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });

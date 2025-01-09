@@ -11,6 +11,7 @@ export default function ListOfChats(){
     const [ changingBlocks, setChangingBlocks ] = useState(false);
     
     const findUser = async () => {
+        if (!inputValue) return;
         try {
             const response = await axios.get("http://localhost:8080/api/findUser", {
                 params: { username: inputValue }
@@ -44,9 +45,9 @@ export default function ListOfChats(){
                 <div className="search-input-wrapper">
                     <img src="./images/magnifier.svg" alt="" className="search-icon" />
                     <input type="text" onChange={(e) => {
-                        if(e.target.value){
-                            setInputValue(e.target.value);
-                        }else{
+                        const value = e.target.value.trim();
+                        setInputValue(value);
+                        if(!value){
                             setFoundUser(null);
                             setChangingBlocks(false);
                         }

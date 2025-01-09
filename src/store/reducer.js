@@ -1,10 +1,10 @@
 const initialState = {
-    user: JSON.parse(sessionStorage.getItem("user")) || null
+    user: null
 }
 
 export function reducer(state = initialState, action){
     switch(action.type){
-        case "SET_USER":
+        case "GET_USER_DATA":
             return { ...state, user: action.payload };
         case "CLEAR_USER":
             return{ ...state, user: null };
@@ -12,12 +12,3 @@ export function reducer(state = initialState, action){
             return state;
     }
 }
-
-export const setUser = (user) => ({
-    type: "SET_USER",
-    payload: user,
-});
-
-export const clearUser = () => ({
-    type: "CLEAR_USER",
-});

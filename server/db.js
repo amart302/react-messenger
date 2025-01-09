@@ -1,4 +1,4 @@
-const { MongoClient, ReturnDocument } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcrypt");
 
 const uri = "mongodb://localhost:27017/";
@@ -76,6 +76,19 @@ async function verificateUser(email, password){
     }
 }
 
+async function getUserData(userId){
+    try {
+        const id = new ObjectId(userId);
+        const foundUser = await userCollection.findOne({ _id: id });
+        
+        delete foundUser.password;
+        return foundUser;
+    } catch (error) {
+        console.error("Ошибка при получении данных пользователя:", error);
+        throw error;
+    }
+}
+
 async function findUser(username){
     try {
         const foundUser = await userCollection.findOne({ username: { $regex: new RegExp(username, "i") } });
@@ -117,7 +130,7 @@ async function createChat(id1, id2){
             { returnDocument: "after" }
         );
 
-        const updataMember2 = await userCollection.findOneAndUpdate(
+        const updataMember2 = await userCollection(
             { _id: id2 },
             { $push: { chats: createChat.insertedId } }
         );
@@ -130,4 +143,4 @@ async function createChat(id1, id2){
     }
 }
 
-module.exports = { registerUser, verificateUser, findUser, createChat }
+module.exports = { registerUser, verificateUser, getUserData, findUser, createChat }
