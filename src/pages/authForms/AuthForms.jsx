@@ -24,11 +24,9 @@ export default function AuthForms(){
         delete data.confirmPassword;
     
         try {
-            const res = await axios.post("http://localhost:8080/api/loginData", data);
-            delete res.data.user.password;
-            sessionStorage.setItem("userId", JSON.stringify(res.data.user._id));
-            
-            setTimeout(() => navigate(res.data.redirect), 400);
+            const response = await axios.post("http://localhost:8080/api/loginData", data);
+            sessionStorage.setItem("userId", JSON.stringify(response.data.userId));
+            setTimeout(() => navigate(response.data.redirect), 400);
         } catch (error) {
             if(error.response){
                 setErrorMessage(error.response.data.message);
@@ -46,13 +44,15 @@ export default function AuthForms(){
         }
     
         try {
-            const res = await axios.post("http://localhost:8080/api/registerData", data);
-
-            delete res.data.user.password;
-            sessionStorage.setItem("userId", JSON.stringify(res.data.user._id));
-            setTimeout(() => navigate(res.data.redirect), 400);
+            const response = await axios.post("http://localhost:8080/api/registerData", data);
+            sessionStorage.setItem("userId", JSON.stringify(response.data.userId));
+            setTimeout(() => navigate(response.data.redirect), 400);
         } catch (error) {
-            setErrorMessage(error.response?.data?.message || "Произошла ошибка при регистрации");
+            if(error.response){
+                setErrorMessage(error.response.data.message);
+            }else{
+                setErrorMessage(error.message);
+            }
         }
     };
 

@@ -1,8 +1,8 @@
 const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcrypt");
+const { mongoURI } = require("./config");
 
-const uri = "mongodb://localhost:27017/";
-const client = new MongoClient(uri);
+const client = new MongoClient(mongoURI);
 
 let db;
 let userCollection;
@@ -21,7 +21,6 @@ async function connect(){
     }
 }
 
-connect();
 
 async function registerUser(username, email, password){
     try {
@@ -49,7 +48,7 @@ async function registerUser(username, email, password){
             }
 
             const result = await userCollection.insertOne(newUser);
-            return newUser;
+            return newUser._id;
         }
     } catch (error) {
         console.error("Ошибка при регистрации пользователя:", error);
@@ -68,7 +67,7 @@ async function verificateUser(email, password){
             error.statusCode = 401;
             throw error;
         }else{
-            return foundUser;
+            return foundUser._id;
         }
     } catch (error) {
         console.error("Ошибка при проверке пользователя:", error);
@@ -178,4 +177,4 @@ async function createChat(userId1, userId2){
     }
 }
 
-module.exports = { registerUser, verificateUser, getUserData, findUser, createChat }
+module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat }

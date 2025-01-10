@@ -1,41 +1,53 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const port = 8080;
+const { body, validationResult } = require("express-validator");
+const { port, corsOrigin, jwtSecret } = require("./config");
 
-const { registerUser, verificateUser, getUserData, findUser, createChat } = require("./db");
+const { connect, registerUser, verificateUser, getUserData, findUser, createChat } = require("./db");
 
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: corsOrigin,
     credentials: true
 }))
 app.use(express.json());
 
-app.post("/api/loginData", async (req, res) => {
+app.post("/api/loginData", [
+    body("email").isEmail().withMessage("Некорректный email"),
+    body("password").isLength({ min: 6 }).withMessage("Минимальная длина 6 символов")
+], async (req, res) => {
+    const error = validationResult(req);
+    if(!error.isEmpty()){
+        return res.status(400).json({ message: "Некорректно введены данные" })
+    }
+
     const { email, password } = req.body;
     
     try {
         const result = await verificateUser(email, password);
-        // console.log(result);
-        delete result.confirmPassword;
 
-        res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result });
+        res.status(201).json({ message: "Данные получены успешно", redirect: "/", userId: result });
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
 })
 
-app.post("/api/registerData", async (req, res) => {
+app.post("/api/registerData", [
+    body("email").isEmail().withMessage("Некорректный email"),
+    body("password").isLength({ min: 6 }).withMessage("Минимальная длина 6 символов")
+], async (req, res) => {
+    const error = validationResult(req);
+    if(!error.isEmpty()){
+        return res.status(400).json({ message: "Некорректно введены данные" })
+    }
+
     const { username, email, password } = req.body;
 
     try {
         const result = await registerUser(username, email, password);
-        // console.log(result);
-        delete result.confirmPassword;
         
-        res.status(201).json({ message: "Данные получены успешно", redirect: "/", user: result});
-
+        res.status(201).json({ message: "Данные получены успешно", redirect: "/", userId: result});
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
@@ -46,7 +58,7 @@ app.get("/api/getUserData", async (req, res) => {
     const userId = req.query.userId;
     try {
         const result = await getUserData(userId);
-
+        
         res.status(201).json({ userData: result })
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
@@ -80,5 +92,6 @@ app.post("/api/createChat", async (req, res) => {
 
 app.listen(port, () => {
     console.clear();
-    console.log(`Сервер запущен на http://localhost:${port}`); 
+    console.log(`Сервер запущен на http://localhost:${port}`);
+    connect();
 });

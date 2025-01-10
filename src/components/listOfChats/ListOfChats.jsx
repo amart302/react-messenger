@@ -11,9 +11,7 @@ export default function ListOfChats(){
     const [ changingBlocks, setChangingBlocks ] = useState(false);
 
     useEffect(() => {
-        if(user) setChats(user.chats)
-            console.log(user);
-            ;
+        if(user) setChats(user.chats);
     }, [user])
     
     const findUser = async () => {
