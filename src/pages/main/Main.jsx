@@ -35,8 +35,6 @@ export default function Main(){
         getUserData();
     }, []);
 
-    useEffect(() => console.log(user), [user]);
-
     return(
         <>
             <ListOfChats />

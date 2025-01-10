@@ -1,14 +1,20 @@
 import { shallowEqual, useSelector } from "react-redux";
 import "./listOfChats.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function ListOfChats(){
     const user = useSelector(state => state.user);
-    const chats = useSelector((state) => state.user?.chats || [], shallowEqual);
+    const [ chats, setChats ] = useState([]);
     const [ inputValue, setInputValue ] = useState("");
     const [ foundUser, setFoundUser ] = useState(null);
     const [ changingBlocks, setChangingBlocks ] = useState(false);
+
+    useEffect(() => {
+        if(user) setChats(user.chats)
+            console.log(user);
+            ;
+    }, [user])
     
     const findUser = async () => {
         if (!inputValue) return;
@@ -22,17 +28,20 @@ export default function ListOfChats(){
             return response.data;
         } catch (error) {
             console.error("Ошибка при поиске пользователя:", error);
+            setFoundUser(null);
             setChangingBlocks(true);
         }
     };
 
-    const createChat = async () => {
+    const createOrOpenChat = async () => {
+        if(user._id == foundUser._id) return;
+
         try {
             const response = await axios.post("http://localhost:8080/api/createChat", {
                 memberId1: user._id,
                 memberId2: foundUser._id
             });
-            console.log();
+            console.log(response.data);
             
         } catch (error) {
             console.error("Ошибка при попытке создать чат:", error);
@@ -55,29 +64,24 @@ export default function ListOfChats(){
                     <button onClick={() => findUser()}>Поиск</button>
                 </div>
             </div>
-            {
-                changingBlocks &&
-                <div className="found-users-container">
-                    {
-                        foundUser ? 
-                        <div className="found-user" onClick={() => createChat()}>
+            <div className="chats-section">
+                {
+                    (changingBlocks) ? ((foundUser) ? 
+                    <div className="chat-container" onClick={() => createOrOpenChat()}>
+                        <img src="./images/userAvatar.png" alt="" />
+                        <p className="user-name">{foundUser.username}</p>
+                    </div> :
+                    <p>Пользователь не найден</p>) :
+                
+                    ((chats && !chats.length)
+                    ? <p>У вас пока нету чатов</p>
+                    : chats.map(item => (
+                        <div className="chat-container">
                             <img src="./images/userAvatar.png" alt="" />
-                            <p className="user-name">{foundUser.username}</p>
-                        </div> :
-                        <p>Пользователь не найден</p>
-                    }
-                </div>
-            }
-            {
-                !changingBlocks &&
-                <div className="chats-container">
-                    {
-                        (!chats.length)
-                        ? <p>У вас пока нету чатов</p>
-                        : <p>Чаты</p>
-                    }
-                </div>
-            }
+                            <p className="user-name">{(item.member1.username == user.username) ? item.member2.username : item.member1.username}</p>
+                        </div>)))
+                }
+            </div>
         </aside>
     )
 }

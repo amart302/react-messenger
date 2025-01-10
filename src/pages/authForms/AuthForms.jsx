@@ -30,7 +30,11 @@ export default function AuthForms(){
             
             setTimeout(() => navigate(res.data.redirect), 400);
         } catch (error) {
-            setErrorMessage(error.response.data.message);
+            if(error.response){
+                setErrorMessage(error.response.data.message);
+            }else{
+                setErrorMessage(error.message);
+            }
         }
     };
 

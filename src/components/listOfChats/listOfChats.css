@@ -39,8 +39,10 @@ aside{
     outline: none;
     font-size: 15px;
 }
-.chats-container{
+.chats-section{
     display: flex;
+    flex-direction: column;
+    gap: 10px;
     align-items: center;
     justify-content: center;
     padding-block: 10px;
@@ -50,7 +52,7 @@ aside{
     justify-content: center;
     padding-block: 10px;
 }
-.found-user{
+.chat-container{
     width: 100%;
     display: flex;
     align-items: center;
@@ -58,6 +60,6 @@ aside{
     cursor: pointer;
     padding-inline: 6px;
 }
-.found-user img{
+.chat-container img{
     width: 60px;
 }
