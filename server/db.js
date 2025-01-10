@@ -25,8 +25,8 @@ connect();
 
 async function registerUser(username, email, password){
     try {
-        const existingEmail = await userCollection.findOne({ email });
-        const existingUsername = await userCollection.findOne({ username });
+        const existingEmail = await userCollection.findOne({ email: email });
+        const existingUsername = await userCollection.findOne({ username: username });
 
         if(existingEmail){
             const error = new Error("Пользователь с таким почтой уже существует");
@@ -59,7 +59,7 @@ async function registerUser(username, email, password){
 
 async function verificateUser(email, password){
     try {
-        const foundUser = await userCollection.findOne({ email });
+        const foundUser = await userCollection.findOne({ email: email });
         const isPasswordValid = (foundUser) ? await bcrypt.compare(password, foundUser.password) : null;
 
         if(!foundUser || !isPasswordValid){
@@ -94,9 +94,10 @@ async function findUser(username){
         const foundUser = await userCollection.findOne({ username: { $regex: new RegExp(username, "i") } });
 
         if(foundUser){
-            delete foundUser.email;
-            delete foundUser.password;
-            delete foundUser.chats;
+            ['email', 'password', 'chats'].forEach(item => {
+                delete foundUser[item];
+            });
+
             
             return foundUser;
         }else{
@@ -110,10 +111,22 @@ async function findUser(username){
     }
 }
 
-async function createChat(id1, id2){
+async function createChat(userId1, userId2){
     try {
-        const member1 = await userCollection.findOne({ id1 });
-        const member2 = await userCollection.findOne({ id2 });
+        const id1 = new ObjectId(userId1);
+        const id2 = new ObjectId(userId2);
+
+        const existingChat = await chatsCollection.findOne({
+            $or: [
+                { member1: id1, member2: id2 },
+                { member1: id2, member2: id1 }
+            ]
+        });
+        
+        if(existingChat){
+            console.log("Чат уже существует");
+            return existingChat;
+        }
 
         const chat = {
             member1: id1,
@@ -122,21 +135,43 @@ async function createChat(id1, id2){
             createdAt: new Date()
         };
 
-        chatsCollection.insertOne(chat);
+        const member1 = await userCollection.findOne({ _id: id1 });
+        const member2 = await userCollection.findOne({ _id: id2 });
 
+        ['email', 'password', 'chats'].forEach(item => {
+            delete member1[item];
+            delete member2[item];
+        });
+
+        const newChat = await chatsCollection.insertOne(chat);
+        
         const updataMember1 = await userCollection.findOneAndUpdate(
             { _id: id1 },
-            { $push: { chats: createChat.insertedId } },
-            { returnDocument: "after" }
+            { $push: { chats: {
+                chatId: newChat.insertedId,
+                member1: member1,
+                member2: member2
+            }}}
         );
 
-        const updataMember2 = await userCollection(
+        const updataMember2 = await userCollection.findOneAndUpdate(
             { _id: id2 },
-            { $push: { chats: createChat.insertedId } }
+            { $push: { chats: {
+                chatId: newChat.insertedId,
+                member1: member1,
+                member2: member2
+            }}}
         );
+
+        const foundChat = await chatsCollection.findOne({
+            $or: [
+                { member1: id1, member2: id2 },
+                { member1: id2, member2: id1 }
+            ]
+        });
 
         console.log("Чат успешно создан");
-        return updataMember1;
+        return foundChat;
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;

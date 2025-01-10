@@ -71,7 +71,7 @@ app.post("/api/createChat", async (req, res) => {
         const { memberId1, memberId2 } = req.body;
         const result = await createChat(memberId1, memberId2);
 
-        res.status(201).json({ message: "Чат создан", foundUser: result });
+        res.status(201).json({ message: "Чат создан", chat: result });
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });

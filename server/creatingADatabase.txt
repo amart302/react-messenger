@@ -2,3 +2,4 @@ MongoDB
 
 use messenger;
 db.createCollection("users");
+db.createCollection("chats");
