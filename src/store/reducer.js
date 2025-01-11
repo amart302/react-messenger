@@ -1,5 +1,6 @@
 const initialState = {
-    user: null
+    user: null,
+    chatSession: null
 }
 
 export function reducer(state = initialState, action){
@@ -8,6 +9,8 @@ export function reducer(state = initialState, action){
             return { ...state, user: action.payload };
         case "CLEAR_USER":
             return{ ...state, user: null };
+        case "SAVE_CHAT_SESSION":
+            return 
         default:
             return state;
     }

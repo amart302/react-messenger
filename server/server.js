@@ -1,15 +1,17 @@
+const WebSocket = require("ws");
 const express = require("express");
 const cors = require("cors");
 const app = express();
 const { body, validationResult } = require("express-validator");
 const { port, corsOrigin, jwtSecret } = require("./config");
+const wss = new WebSocket.Server({ port: port + 1 });
 
 const { connect, registerUser, verificateUser, getUserData, findUser, createChat } = require("./db");
 
 app.use(cors({
     origin: corsOrigin,
     credentials: true
-}))
+}));
 app.use(express.json());
 
 app.post("/api/loginData", [
@@ -31,7 +33,7 @@ app.post("/api/loginData", [
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
-})
+});
 
 app.post("/api/registerData", [
     body("email").isEmail().withMessage("Некорректный email"),
@@ -52,7 +54,7 @@ app.post("/api/registerData", [
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
-})
+});
 
 app.get("/api/getUserData", async (req, res) => {
     const userId = req.query.userId;
@@ -64,7 +66,7 @@ app.get("/api/getUserData", async (req, res) => {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
-})
+});
 
 app.get("/api/findUser", async (req, res) => {
     const username = req.query.username;
@@ -76,22 +78,38 @@ app.get("/api/findUser", async (req, res) => {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message })
     }
-})
+});
 
 app.post("/api/createChat", async (req, res) => {
     try {
         const { memberId1, memberId2 } = req.body;
         const result = await createChat(memberId1, memberId2);
-
-        res.status(201).json({ message: "Чат создан", chat: result });
+        
+        res.status(201).json({ message: result.message, chatData: result.chatData });
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
-})
+});
+
+function startChating(){
+    wss.on("connection", (ws) => {
+        ws.on("message", (message) => {
+            console.log('Получено сообщение:', message.toString());
+            
+            ws.send("Привет клиент");
+        });
+
+        ws.on("close", () => {
+            console.log("Клиент отключился");
+        });
+    });
+
+}
 
 app.listen(port, () => {
     console.clear();
     console.log(`Сервер запущен на http://localhost:${port}`);
     connect();
+    startChating();
 });

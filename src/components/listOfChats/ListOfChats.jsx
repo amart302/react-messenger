@@ -39,8 +39,6 @@ export default function ListOfChats(){
                 memberId1: user._id,
                 memberId2: foundUser._id
             });
-            console.log(response.data);
-            
         } catch (error) {
             console.error("Ошибка при попытке создать чат:", error);
         }

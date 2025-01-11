@@ -16,7 +16,7 @@ async function connect(){
         chatsCollection = db.collection("chats");
         console.log("Подключение к MongoDB  успешно");
     } catch (error) {
-        console.error("Ошибка подключения в MongoDB");
+        console.error("Ошибка подключения в MongoDB", error);
         process.exit(1);
     }
 }
@@ -124,7 +124,7 @@ async function createChat(userId1, userId2){
         
         if(existingChat){
             console.log("Чат уже существует");
-            return existingChat;
+            return { message: "Чат уже существыет", chatData: existingChat };
         }
 
         const chat = {
@@ -170,7 +170,7 @@ async function createChat(userId1, userId2){
         });
 
         console.log("Чат успешно создан");
-        return foundChat;
+        return { message: "Чат уже существыет", chatData: foundChat };
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;
