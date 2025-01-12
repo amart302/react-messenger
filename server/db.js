@@ -77,8 +77,7 @@ async function verificateUser(email, password){
 
 async function getUserData(userId){
     try {
-        const id = new ObjectId(userId);
-        const foundUser = await userCollection.findOne({ _id: id });
+        const foundUser = await userCollection.findOne({ _id: new ObjectId(userId) });
         
         delete foundUser.password;
         return foundUser;
@@ -112,24 +111,21 @@ async function findUser(username){
 
 async function createChat(userId1, userId2){
     try {
-        const id1 = new ObjectId(userId1);
-        const id2 = new ObjectId(userId2);
-
         const existingChat = await chatsCollection.findOne({
             $or: [
-                { "memberData1.id": id1, "memberData2.id": id2 },
-                { "memberData1.id": id2, "memberData2.id": id1 }
+                { "memberData1.id": new ObjectId(userId1), "memberData2.id": new ObjectId(userId2) },
+                { "memberData1.id": new ObjectId(userId2), "memberData2.id": new ObjectId(userId1) }
             ]
         });
         
         if(existingChat){
             console.log("Чат уже существует");
             
-            return { message: "Чат уже существует", chatData: existingChat };
+            return { message: "Чат уже существует", chatId: existingChat._id };
         }
 
-        const member1 = await userCollection.findOne({ _id: id1 });
-        const member2 = await userCollection.findOne({ _id: id2 });
+        const member1 = await userCollection.findOne({ _id: new ObjectId(userId1) });
+        const member2 = await userCollection.findOne({ _id: new ObjectId(userId2) });
         
         ['email', 'password', 'chats'].forEach(item => {
             delete member1[item];
@@ -138,11 +134,11 @@ async function createChat(userId1, userId2){
 
         const chat = {
             memberData1: {
-                id: id1,
+                id: new ObjectId(userId1),
                 username: member1.username,
             },
             memberData2: {
-                id: id2,
+                id: new ObjectId(userId2),
                 username: member2.username
             },
             messages: [],
@@ -152,7 +148,7 @@ async function createChat(userId1, userId2){
         const newChat = await chatsCollection.insertOne(chat);
         
         const updataMember1 = await userCollection.findOneAndUpdate(
-            { _id: id1 },
+            { _id: new ObjectId(userId1) },
             { $push: { chats: {
                 chatId: newChat.insertedId,
                 member1: member1,
@@ -161,23 +157,16 @@ async function createChat(userId1, userId2){
         );
 
         const updataMember2 = await userCollection.findOneAndUpdate(
-            { _id: id2 },
+            { _id: new ObjectId(userId2) },
             { $push: { chats: {
                 chatId: newChat.insertedId,
                 member1: member1,
                 member2: member2
             }}}
         );
-
-        const foundChat = await chatsCollection.findOne({
-            $or: [
-                { "memberData1.id": id1, "memberData2.id": id2 },
-                { "memberData1.id": id2, "memberData2.id": id1 }
-            ]
-        });
-
+        
         console.log("Чат успешно создан");
-        return { message: "Чат успешно создан", chatData: foundChat };
+        return { message: "Чат успешно создан", chatId: newChat._id };
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;
@@ -186,8 +175,7 @@ async function createChat(userId1, userId2){
 
 async function getChatData(chatId){
     try {
-        const id = new ObjectId(chatId);
-        const foundChat = await chatsCollection.findOne({ _id: id });
+        const foundChat = await chatsCollection.findOne({ _id: new ObjectId(chatId) });
         
         return foundChat;
     } catch (error) {
@@ -196,4 +184,23 @@ async function getChatData(chatId){
     }
 }
 
-module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData }
+async function addNewMessage(chatId, userId, username, text){
+    try {
+        const chatData = await chatsCollection.findOneAndUpdate(
+            { _id: new ObjectId(chatId) },
+            { $push: { messages: {
+                userId: userId,
+                username: username,
+                text: text
+            }}},
+            { returnDocument: "after" }
+        );
+        
+        return chatData;
+    } catch (error) {
+        console.error("Ошибка при добавлении сообщения:", error);
+        throw error;
+    }
+}
+
+module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage }

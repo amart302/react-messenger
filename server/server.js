@@ -12,7 +12,7 @@ const server = app.listen(port, () => {
 const wss = new WebSocket.Server({ server });
 const clients = new Map();
 
-const { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData } = require("./db");
+const { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage } = require("./db");
 
 app.use(cors({
     origin: corsOrigin,
@@ -62,20 +62,6 @@ app.post("/api/registerData", [
     }
 });
 
-app.get("/api/getUserData", async (req, res) => {
-    const userId = req.query.userId;
-    console.log(userId);
-    
-    try {
-        const result = await getUserData(userId);
-        
-        res.status(201).json({ userData: result })
-    } catch (error) {
-        if(!error.statusCode) error.statusCode = 500;
-        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
-    }
-});
-
 app.get("/api/findUser", async (req, res) => {
     const username = req.query.username;
     try {
@@ -92,9 +78,8 @@ app.post("/api/createChat", async (req, res) => {
     try {
         const { memberId1, memberId2 } = req.body;
         const result = await createChat(memberId1, memberId2);
-        console.log(result);
         
-        res.status(201).json({ message: result.message, chatId: result.chatData._id });
+        res.status(201).json({ message: result.message, chatId: result.chatId });
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
@@ -105,7 +90,6 @@ wss.on("connection", (ws) => {
     console.log('Новое соединение установлено');
     ws.on("message", async (message) => {
         const data = JSON.parse(message)
-        console.log('Получено сообщение:', data);
         
         switch(data.type){
             case "GET_USER_DATA":
@@ -118,8 +102,15 @@ wss.on("connection", (ws) => {
                 const chatData = await getChatData(data.chatId);
                 ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 break;
-            case "ADD_MESSAGE":
+            case "UPDATE_USER_DATA":
+                const updatedUserData = await getUserData(data.userId);
+                
+                ws.send(JSON.stringify({ type: "USER_UPDATED", payload: updatedUserData }))
+                break;
+            case "ADD_NEW_MESSAGE":
+                const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
 
+                ws.send(JSON.stringify({ type: "CHAT_DATA", payload: updatedChatData}))
                 break;
             default:
                 console.log("Неизвестный тип сообщения:", data.type);
@@ -128,5 +119,12 @@ wss.on("connection", (ws) => {
 
     ws.on("close", () => {
         console.log("Клиент отключился");
+    
+        for (const [userId, clientWs] of clients.entries()) {
+            if (clientWs === ws) {
+                clients.delete(userId);
+                break;
+            }
+        }
     });
 });
