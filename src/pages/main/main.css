@@ -1,0 +1,28 @@
+main{
+    width: calc(100% - 320px);
+}
+.chat-header{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    border-bottom: solid 1px ;
+    padding: 10px;
+}
+.chat-header img{
+    width: 50px;
+}
+.chat-main{
+    height: calc(100vh - 141px);
+}
+.chat-footer{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    border-top: solid 1px ;
+    padding: 10px;
+}
+.chat-footer input{
+    width: 100%;
+}

@@ -117,30 +117,37 @@ async function createChat(userId1, userId2){
 
         const existingChat = await chatsCollection.findOne({
             $or: [
-                { member1: id1, member2: id2 },
-                { member1: id2, member2: id1 }
+                { "memberData1.id": id1, "memberData2.id": id2 },
+                { "memberData1.id": id2, "memberData2.id": id1 }
             ]
         });
         
         if(existingChat){
             console.log("Чат уже существует");
-            return { message: "Чат уже существыет", chatData: existingChat };
+            
+            return { message: "Чат уже существует", chatData: existingChat };
         }
-
-        const chat = {
-            member1: id1,
-            member2: id2,
-            messages: [],
-            createdAt: new Date()
-        };
 
         const member1 = await userCollection.findOne({ _id: id1 });
         const member2 = await userCollection.findOne({ _id: id2 });
-
+        
         ['email', 'password', 'chats'].forEach(item => {
             delete member1[item];
             delete member2[item];
         });
+
+        const chat = {
+            memberData1: {
+                id: id1,
+                username: member1.username,
+            },
+            memberData2: {
+                id: id2,
+                username: member2.username
+            },
+            messages: [],
+            createdAt: new Date()
+        };
 
         const newChat = await chatsCollection.insertOne(chat);
         
@@ -164,17 +171,29 @@ async function createChat(userId1, userId2){
 
         const foundChat = await chatsCollection.findOne({
             $or: [
-                { member1: id1, member2: id2 },
-                { member1: id2, member2: id1 }
+                { "memberData1.id": id1, "memberData2.id": id2 },
+                { "memberData1.id": id2, "memberData2.id": id1 }
             ]
         });
 
         console.log("Чат успешно создан");
-        return { message: "Чат уже существыет", chatData: foundChat };
+        return { message: "Чат успешно создан", chatData: foundChat };
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;
     }
 }
 
-module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat }
+async function getChatData(chatId){
+    try {
+        const id = new ObjectId(chatId);
+        const foundChat = await chatsCollection.findOne({ _id: id });
+        
+        return foundChat;
+    } catch (error) {
+        console.error("Ошибка при поиске чата:", error);
+        throw error;
+    }
+}
+
+module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData }

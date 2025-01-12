@@ -4,9 +4,15 @@ const cors = require("cors");
 const app = express();
 const { body, validationResult } = require("express-validator");
 const { port, corsOrigin, jwtSecret } = require("./config");
-const wss = new WebSocket.Server({ port: port + 1 });
+const server = app.listen(port, () => {
+    console.clear();
+    console.log(`Сервер запущен на http://localhost:${port}`);
+    connect();
+});
+const wss = new WebSocket.Server({ server });
+const clients = new Map();
 
-const { connect, registerUser, verificateUser, getUserData, findUser, createChat } = require("./db");
+const { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData } = require("./db");
 
 app.use(cors({
     origin: corsOrigin,
@@ -58,6 +64,8 @@ app.post("/api/registerData", [
 
 app.get("/api/getUserData", async (req, res) => {
     const userId = req.query.userId;
+    console.log(userId);
+    
     try {
         const result = await getUserData(userId);
         
@@ -84,32 +92,41 @@ app.post("/api/createChat", async (req, res) => {
     try {
         const { memberId1, memberId2 } = req.body;
         const result = await createChat(memberId1, memberId2);
+        console.log(result);
         
-        res.status(201).json({ message: result.message, chatData: result.chatData });
+        res.status(201).json({ message: result.message, chatId: result.chatData._id });
     } catch (error) {
         if(!error.statusCode) error.statusCode = 500;
         res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
 });
 
-function startChating(){
-    wss.on("connection", (ws) => {
-        ws.on("message", (message) => {
-            console.log('Получено сообщение:', message.toString());
-            
-            ws.send("Привет клиент");
-        });
+wss.on("connection", (ws) => {
+    console.log('Новое соединение установлено');
+    ws.on("message", async (message) => {
+        const data = JSON.parse(message)
+        console.log('Получено сообщение:', data);
+        
+        switch(data.type){
+            case "GET_USER_DATA":
+                clients.set(data.userId, ws);
+                const userData = await getUserData(data.userId);
+                
+                ws.send(JSON.stringify({ type: "USER_DATA", payload: userData }));
+                break;
+            case "GET_CHAT_DATA":
+                const chatData = await getChatData(data.chatId);
+                ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
+                break;
+            case "ADD_MESSAGE":
 
-        ws.on("close", () => {
-            console.log("Клиент отключился");
-        });
+                break;
+            default:
+                console.log("Неизвестный тип сообщения:", data.type);
+        }
     });
 
-}
-
-app.listen(port, () => {
-    console.clear();
-    console.log(`Сервер запущен на http://localhost:${port}`);
-    connect();
-    startChating();
+    ws.on("close", () => {
+        console.log("Клиент отключился");
+    });
 });

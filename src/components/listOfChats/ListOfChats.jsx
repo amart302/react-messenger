@@ -1,10 +1,14 @@
-import { shallowEqual, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import "./listOfChats.css";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { ws, webSocketConnection  } from "../../store/webSocket";
+import ChatItem from "../chatItem/ChatItem";
 
-export default function ListOfChats(){
+export default function ListOfChats({ requestChatData }){
+    const dispatch = useDispatch();
     const user = useSelector(state => state.user);
+    const chatData = useSelector(state => state.chatData);
     const [ chats, setChats ] = useState([]);
     const [ inputValue, setInputValue ] = useState("");
     const [ foundUser, setFoundUser ] = useState(null);
@@ -13,7 +17,7 @@ export default function ListOfChats(){
     useEffect(() => {
         if(user) setChats(user.chats);
     }, [user])
-    
+
     const findUser = async () => {
         if (!inputValue) return;
         try {
@@ -31,18 +35,24 @@ export default function ListOfChats(){
         }
     };
 
-    const createOrOpenChat = async () => {
-        if(user._id == foundUser._id) return;
+    const createOrOpenChat = async (id) => {
+        if(foundUser) if(user._id == id) return;
 
         try {
             const response = await axios.post("http://localhost:8080/api/createChat", {
                 memberId1: user._id,
-                memberId2: foundUser._id
+                memberId2: id
             });
+            
+            requestChatData(response.data.chatId);
         } catch (error) {
             console.error("Ошибка при попытке создать чат:", error);
         }
     }
+
+    const getChatPartner = (chat) => {
+        return chat.member1.username === user.username ? chat.member2 : chat.member1;
+    };
 
     return(
         <aside>
@@ -62,20 +72,19 @@ export default function ListOfChats(){
             </div>
             <div className="chats-section">
                 {
-                    (changingBlocks) ? ((foundUser) ? 
-                    <div className="chat-container" onClick={() => createOrOpenChat()}>
-                        <img src="./images/userAvatar.png" alt="" />
-                        <p className="user-name">{foundUser.username}</p>
-                    </div> :
-                    <p>Пользователь не найден</p>) :
-                
-                    ((chats && !chats.length)
-                    ? <p>У вас пока нету чатов</p>
-                    : chats.map(item => (
-                        <div className="chat-container">
-                            <img src="./images/userAvatar.png" alt="" />
-                            <p className="user-name">{(item.member1.username == user.username) ? item.member2.username : item.member1.username}</p>
-                        </div>)))
+                    (changingBlocks) ? (
+                        (foundUser) ? (
+                            <ChatItem user={foundUser} onClick={() => createOrOpenChat(foundUser._id)} />
+                        ) : (<p>Пользователь не найден</p>)
+                    ) : chats?.length ? (
+                        chats.map(item => {
+                            const partner = getChatPartner(item);
+                            
+                            return (
+                                <ChatItem key={partner._id} user={partner} onClick={() => createOrOpenChat(partner._id)} />
+                            )
+                        })
+                    ) : (<p>У вас пока нету чатов</p>)
                 }
             </div>
         </aside>
