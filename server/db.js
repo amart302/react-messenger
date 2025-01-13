@@ -203,4 +203,4 @@ async function addNewMessage(chatId, userId, username, text){
     }
 }
 
-module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage }
+module.exports = { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage };

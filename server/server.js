@@ -100,6 +100,7 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA":
                 const chatData = await getChatData(data.chatId);
+                
                 ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 break;
             case "UPDATE_USER_DATA":
@@ -109,6 +110,17 @@ wss.on("connection", (ws) => {
                 break;
             case "ADD_NEW_MESSAGE":
                 const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
+                const updateChatData = await getChatData(data.chatId);
+                
+                const memberConnection1 = await clients.get(updateChatData.memberData1.id.toString());
+                const memberConnection2 = await clients.get(updateChatData.memberData2.id.toString());
+                if(memberConnection1 && memberConnection1.readyState === WebSocket.OPEN){
+                    memberConnection1.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
+                }
+
+                if(memberConnection2 && memberConnection2.readyState === WebSocket.OPEN){
+                    memberConnection2.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
+                }
 
                 ws.send(JSON.stringify({ type: "CHAT_DATA", payload: updatedChatData}))
                 break;

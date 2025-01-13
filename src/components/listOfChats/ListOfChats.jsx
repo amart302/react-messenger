@@ -2,10 +2,9 @@ import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import "./listOfChats.css";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { ws, webSocketConnection  } from "../../store/webSocket";
 import ChatItem from "../chatItem/ChatItem";
 
-export default function ListOfChats({ requestChatData }){
+export default function ListOfChats({ requestChatData, ws }){
     const dispatch = useDispatch();
     const user = useSelector(state => state.user);
     const chatData = useSelector(state => state.chatData);
@@ -43,6 +42,7 @@ export default function ListOfChats({ requestChatData }){
                 memberId1: user._id,
                 memberId2: id
             });
+            ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
             
             requestChatData(response.data.chatId);
         } catch (error) {
@@ -51,7 +51,7 @@ export default function ListOfChats({ requestChatData }){
     }
 
     const getChatPartner = (chat) => {
-        return chat.member1.username === user.username ? chat.member2 : chat.member1;
+        if(user) return chat.member1.username === user.username ? chat.member2 : chat.member1;
     };
 
     return(
@@ -59,10 +59,11 @@ export default function ListOfChats({ requestChatData }){
             <div className="search-container">
                 <div className="search-input-wrapper">
                     <img src="./images/magnifier.svg" alt="" className="search-icon" />
-                    <input type="text" onChange={(e) => {
+                    <input type="text" onKeyDown={(e) => {if(e.key == "Enter") findUser()}} onChange={(e) => {
                         const value = e.target.value.trim();
                         setInputValue(value);
                         if(!value){
+                            ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
                             setFoundUser(null);
                             setChangingBlocks(false);
                         }
@@ -79,10 +80,12 @@ export default function ListOfChats({ requestChatData }){
                     ) : chats?.length ? (
                         chats.map(item => {
                             const partner = getChatPartner(item);
+                            if(partner){
+                                return (
+                                    <ChatItem key={partner._id} user={partner} onClick={() => createOrOpenChat(partner._id)} />
+                                )
+                            }
                             
-                            return (
-                                <ChatItem key={partner._id} user={partner} onClick={() => createOrOpenChat(partner._id)} />
-                            )
                         })
                     ) : (<p>У вас пока нету чатов</p>)
                 }
