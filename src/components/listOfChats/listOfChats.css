@@ -45,6 +45,7 @@ aside{
     align-items: center;
     justify-content: center;
     padding-block: 10px;
+    overflow-y: auto;
 }
 .found-users-container{
     display: flex;

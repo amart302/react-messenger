@@ -74,10 +74,10 @@ app.get("/api/findUser", async (req, res) => {
     }
 });
 
-app.post("/api/createChat", async (req, res) => {
+app.post("/api/createOrOpenChat", async (req, res) => {
     try {
-        const { memberId1, memberId2 } = req.body;
-        const result = await createChat(memberId1, memberId2);
+        const { userId1, userId2 } = req.body;
+        const result = await createChat(userId1, userId2);
         
         res.status(201).json({ message: result.message, chatId: result.chatId });
     } catch (error) {
@@ -89,40 +89,59 @@ app.post("/api/createChat", async (req, res) => {
 wss.on("connection", (ws) => {
     console.log('Новое соединение установлено');
     ws.on("message", async (message) => {
-        const data = JSON.parse(message)
+        const data = JSON.parse(message);
         
         switch(data.type){
             case "GET_USER_DATA":
-                clients.set(data.userId, ws);
-                const userData = await getUserData(data.userId);
-                
-                ws.send(JSON.stringify({ type: "USER_DATA", payload: userData }));
+                try {
+                    clients.set(data.userId, ws);
+                    const userData = await getUserData(data.userId);
+                    ws.send(JSON.stringify({ type: "USER_DATA", payload: userData }));
+                } catch (error) {
+                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
+                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                }
                 break;
             case "GET_CHAT_DATA":
-                const chatData = await getChatData(data.chatId);
-                
+                const chatData = await createChat(data.userId1, data.userId2);
                 ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 break;
+            case "GET_CHAT_DATA_BY_ID":
+                try {
+                    const chatData = await getChatData(data.chatId);                    
+                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
+                } catch (error) {
+                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
+                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                }
+                break;
             case "UPDATE_USER_DATA":
-                const updatedUserData = await getUserData(data.userId);
-                
-                ws.send(JSON.stringify({ type: "USER_UPDATED", payload: updatedUserData }))
+                try {
+                    const updatedUserData = await getUserData(data.userId);
+                    ws.send(JSON.stringify({ type: "USER_UPDATED", payload: updatedUserData }));
+                } catch (error) {
+                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
+                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                }
                 break;
             case "ADD_NEW_MESSAGE":
-                const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
-                const updateChatData = await getChatData(data.chatId);
-                
-                const memberConnection1 = await clients.get(updateChatData.memberData1.id.toString());
-                const memberConnection2 = await clients.get(updateChatData.memberData2.id.toString());
-                if(memberConnection1 && memberConnection1.readyState === WebSocket.OPEN){
-                    memberConnection1.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
+                try {
+                    const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
+                    const updateChatData = await getChatData(data.chatId);
+                    
+                    const participantConnection1 = await clients.get(updateChatData.participant1.userId.toString());
+                    const participantConnection2 = await clients.get(updateChatData.participant2.userId.toString());
+                    if(participantConnection1 && participantConnection1.readyState === WebSocket.OPEN){
+                        participantConnection1.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
+                    }
+                    if(participantConnection2 && participantConnection2.readyState === WebSocket.OPEN){
+                        participantConnection2.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
+                    }
+                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: updatedChatData}));
+                } catch (error) {
+                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
+                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
                 }
-
-                if(memberConnection2 && memberConnection2.readyState === WebSocket.OPEN){
-                    memberConnection2.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
-                }
-
-                ws.send(JSON.stringify({ type: "CHAT_DATA", payload: updatedChatData}))
                 break;
             default:
                 console.log("Неизвестный тип сообщения:", data.type);

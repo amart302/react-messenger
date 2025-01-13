@@ -113,33 +113,33 @@ async function createChat(userId1, userId2){
     try {
         const existingChat = await chatsCollection.findOne({
             $or: [
-                { "memberData1.id": new ObjectId(userId1), "memberData2.id": new ObjectId(userId2) },
-                { "memberData1.id": new ObjectId(userId2), "memberData2.id": new ObjectId(userId1) }
+                { "participant1.userId": new ObjectId(userId1), "participant2.userId": new ObjectId(userId2) },
+                { "participant1.userId": new ObjectId(userId2), "participant2.userId": new ObjectId(userId1) }
             ]
         });
         
         if(existingChat){
             console.log("Чат уже существует");
             
-            return { message: "Чат уже существует", chatId: existingChat._id };
+            return existingChat;
         }
 
-        const member1 = await userCollection.findOne({ _id: new ObjectId(userId1) });
-        const member2 = await userCollection.findOne({ _id: new ObjectId(userId2) });
+        const participant1 = await userCollection.findOne({ _id: new ObjectId(userId1) });
+        const participant2 = await userCollection.findOne({ _id: new ObjectId(userId2) });
         
         ['email', 'password', 'chats'].forEach(item => {
-            delete member1[item];
-            delete member2[item];
+            delete participant1[item];
+            delete participant2[item];
         });
 
         const chat = {
-            memberData1: {
-                id: new ObjectId(userId1),
-                username: member1.username,
+            participant1: {
+                userId: new ObjectId(userId1),
+                username: participant1.username,
             },
-            memberData2: {
-                id: new ObjectId(userId2),
-                username: member2.username
+            participant2: {
+                userId: new ObjectId(userId2),
+                username: participant2.username
             },
             messages: [],
             createdAt: new Date()
@@ -147,26 +147,26 @@ async function createChat(userId1, userId2){
 
         const newChat = await chatsCollection.insertOne(chat);
         
-        const updataMember1 = await userCollection.findOneAndUpdate(
+        const updataParticipant1 = await userCollection.findOneAndUpdate(
             { _id: new ObjectId(userId1) },
             { $push: { chats: {
                 chatId: newChat.insertedId,
-                member1: member1,
-                member2: member2
+                participant1: participant1,
+                participant2: participant2
             }}}
         );
 
-        const updataMember2 = await userCollection.findOneAndUpdate(
+        const updataParticipant2 = await userCollection.findOneAndUpdate(
             { _id: new ObjectId(userId2) },
             { $push: { chats: {
                 chatId: newChat.insertedId,
-                member1: member1,
-                member2: member2
+                participant1: participant1,
+                participant2: participant2
             }}}
         );
         
         console.log("Чат успешно создан");
-        return { message: "Чат успешно создан", chatId: newChat._id };
+        return newChat;
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;
