@@ -1,6 +1,11 @@
 .App{
+    max-width: 1500px;
+    margin-inline: auto;
     display: grid;
     grid-template-columns: 0.4fr 1fr;
+}
+main{
+    border-right: solid 1px;
 }
 .chat-header{
     height: 70px;

@@ -1,7 +1,7 @@
 aside{
     height: calc(100vh - 20px);
     padding: 10px 10px;
-    border-right: solid 1px;
+    border-inline: solid 1px;
 }
 .search-container{
     display: flex;
@@ -12,7 +12,7 @@ aside{
     width: 100%;
     height: 26px;
     display: grid;
-    grid-template-columns: 20px 1fr 80px;
+    grid-template-columns: 20px minmax(0, 1fr) 62px;
     align-items: center;
     gap: 4px;
     border: solid 1px #231F20;

@@ -14,34 +14,22 @@ export default function Main(){
     const ws = useRef(null);
     const blockRef = useRef(null);
 
-    const scrollToBottom = () => {
-        if (blockRef.current) {
-            blockRef.current.scrollTo({
-                top: blockRef.current.scrollHeight,
-                behavior: 'smooth',
-            });
-        }
-    };
-
     const userId = JSON.parse(sessionStorage.getItem("userId"));
-    const chatId = JSON.parse(sessionStorage.getItem("chatId"));
-
+    
     useEffect(() => {
         if(!userId){
             dispatch({type: "CLEAR_USER"});
+            dispatch({type: "CLEAR_CHAT"});
             navigate("/login");
         }
     }, [userId, dispatch, navigate]);
 
-    useEffect(() => {
+    useEffect(() => {       
             ws.current = new WebSocket("ws://localhost:8080");
             ws.current.onopen = () => {
                 console.log("Подключено к серверу");                
                 if(userId && ws.current && ws.current.readyState === WebSocket.OPEN){
                     ws.current.send(JSON.stringify({ type: "GET_USER_DATA", userId:  userId}))
-                }
-                if(chatId && ws.current && ws.current.readyState === WebSocket.OPEN){
-                    ws.current.send(JSON.stringify({ type: "GET_CHAT_DATA_BY_ID", chatId: chatId }));
                 }
             };
             
@@ -56,6 +44,7 @@ export default function Main(){
                             break;
                         case "CHAT_DATA":
                             dispatch({ type: "SAVE_CHAT_DATA", payload: data.payload });
+                            scrollToBottom();
                             break;
                         case "USER_UPDATED":
                             dispatch({ type: "SAVE_USER_DATA", payload: data.payload });
@@ -77,14 +66,7 @@ export default function Main(){
             };
 
             ws.current.onclose = () => {
-                ws.current = new WebSocket("ws://localhost:8080");
-
-                ws.current.onclose = () => {
-                    setTimeout(() => {
-                        dispatch({type: "CLEAR_USER"});
-                        navigate("/login");
-                    }, 2000);
-                };
+                console.log("Соединение закрыто");
             };
 
             return () => {
@@ -102,17 +84,51 @@ export default function Main(){
         }
     }, [chatData, user]);
         
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            if(blockRef.current){
+                blockRef.current.scrollTo({
+                    top: blockRef.current.scrollHeight,
+                    behavior: "smooth"
+                });
+            };
+        }, 100);
+    };
+
+    let count = 0;
+    const reconnecting = () => {
+        if(count < 5){
+            ws.current = new WebSocket("ws://localhost:8080");
+            console.log("Попытка переподключения");
+
+            ws.current.ononpen = () => {
+                console.log("Подключение установлено");
+                count = 0;
+            };
+
+            ws.current.onclose = () => {
+                setTimeout(() => {
+                    reconnecting();
+                }, 1000);
+            };
+            count++;
+        }else{
+            dispatch({type: "CLEAR_USER"});
+            dispatch({type: "CLEAR_CHAT"});
+            navigate("/login");
+        }
+    };
+
     const sendMessage = () => {
         if(inputMessage){
             ws.current.send(JSON.stringify({ type: "ADD_NEW_MESSAGE", chatId: chatData._id, user: { userId: user._id, username: user.username}, text: inputMessage }));
             setInputMessage("");
-            setTimeout(() => scrollToBottom(), 100);
         }
-    }
-
+    };
+    
     return(
         <div className="App">
-            <ListOfChats ws={ws}/>
+            <ListOfChats ws={ws} scrollToBottom={scrollToBottom}/>
             <main>
                 {
                     chatInterlocutor && (

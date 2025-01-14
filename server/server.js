@@ -86,6 +86,11 @@ app.post("/api/createOrOpenChat", async (req, res) => {
     }
 });
 
+const handleError = (ws, type, error) => {
+    console.error(`Ошибка при обработке запроса ${type}:`, error);
+    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${type}` }));
+};
+
 wss.on("connection", (ws) => {
     console.log('Новое соединение установлено');
     ws.on("message", async (message) => {
@@ -98,21 +103,23 @@ wss.on("connection", (ws) => {
                     const userData = await getUserData(data.userId);
                     ws.send(JSON.stringify({ type: "USER_DATA", payload: userData }));
                 } catch (error) {
-                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
-                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                    handleError(ws, data.type, error);
                 }
                 break;
             case "GET_CHAT_DATA":
-                const chatData = await createChat(data.userId1, data.userId2);
-                ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
+                try {
+                    const chatData = await createChat(data.userId1, data.userId2);
+                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
+                } catch (error) {
+                    handleError(ws, data.type, error);
+                }
                 break;
             case "GET_CHAT_DATA_BY_ID":
                 try {
                     const chatData = await getChatData(data.chatId);                    
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
-                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
-                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                    handleError(ws, data.type, error);
                 }
                 break;
             case "UPDATE_USER_DATA":
@@ -120,8 +127,7 @@ wss.on("connection", (ws) => {
                     const updatedUserData = await getUserData(data.userId);
                     ws.send(JSON.stringify({ type: "USER_UPDATED", payload: updatedUserData }));
                 } catch (error) {
-                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
-                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                    handleError(ws, data.type, error);
                 }
                 break;
             case "ADD_NEW_MESSAGE":
@@ -139,8 +145,7 @@ wss.on("connection", (ws) => {
                     }
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: updatedChatData}));
                 } catch (error) {
-                    console.error(`Ошибка при обработке запроса ${data.type}:`, error);
-                    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${data.type}` }));
+                    handleError(ws, data.type, error);
                 }
                 break;
             default:

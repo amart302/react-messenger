@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import ChatItem from "../chatItem/ChatItem";
 
-export default function ListOfChats({ ws }){
+export default function ListOfChats({ ws, scrollToBottom }){
     const user = useSelector(state => state.user);
     const [ chats, setChats ] = useState([]);
     const [ inputValue, setInputValue ] = useState("");
@@ -37,6 +37,7 @@ export default function ListOfChats({ ws }){
         
         try {
             ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
+            scrollToBottom();
             if(ws.current && ws.current.readyState === WebSocket.OPEN){
                 ws.current.send(JSON.stringify({ type: "GET_CHAT_DATA", userId1: user._id, userId2: id }));
             }

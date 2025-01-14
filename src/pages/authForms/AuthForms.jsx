@@ -15,7 +15,6 @@ export default function AuthForms(){
 
     useEffect(() => {
         sessionStorage.setItem("userId", null);
-        sessionStorage.setItem("chatId", null)
         dispatch({type: "CLEAR_USER"});
     }, []);
     

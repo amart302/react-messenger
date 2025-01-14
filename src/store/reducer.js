@@ -11,6 +11,8 @@ export function reducer(state = initialState, action){
             return{ ...state, user: null };
         case "SAVE_CHAT_DATA":
             return { ...state, chatData: action.payload };
+        case "CLEAR_CHAT":
+            return { ...state, chatData: null };
         default:
             return state;
     }
