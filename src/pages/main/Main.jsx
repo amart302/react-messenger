@@ -12,6 +12,16 @@ export default function Main(){
     const [ chatInterlocutor, setChatInterlocutor ] = useState(null);
     const [ inputMessage, setInputMessage ] = useState("");
     const ws = useRef(null);
+    const blockRef = useRef(null);
+
+    const scrollToBottom = () => {
+        if (blockRef.current) {
+            blockRef.current.scrollTo({
+                top: blockRef.current.scrollHeight,
+                behavior: 'smooth',
+            });
+        }
+    };
 
     const userId = JSON.parse(sessionStorage.getItem("userId"));
     const chatId = JSON.parse(sessionStorage.getItem("chatId"));
@@ -27,7 +37,7 @@ export default function Main(){
             ws.current = new WebSocket("ws://localhost:8080");
             ws.current.onopen = () => {
                 console.log("Подключено к серверу");                
-                if(userId){
+                if(userId && ws.current && ws.current.readyState === WebSocket.OPEN){
                     ws.current.send(JSON.stringify({ type: "GET_USER_DATA", userId:  userId}))
                 }
                 if(chatId && ws.current && ws.current.readyState === WebSocket.OPEN){
@@ -96,6 +106,7 @@ export default function Main(){
         if(inputMessage){
             ws.current.send(JSON.stringify({ type: "ADD_NEW_MESSAGE", chatId: chatData._id, user: { userId: user._id, username: user.username}, text: inputMessage }));
             setInputMessage("");
+            setTimeout(() => scrollToBottom(), 100);
         }
     }
 
@@ -110,7 +121,7 @@ export default function Main(){
                                 <img src="./images/userAvatar.png" alt="" />
                                 {chatInterlocutor?.username}
                             </div>
-                            <div className="chat-main">
+                            <div className="chat-main" ref={blockRef}>
                                 {
                                     chatData?.messages?.map(item => (
                                         (item.username === user?.username) ?
