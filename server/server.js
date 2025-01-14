@@ -4,6 +4,7 @@ const cors = require("cors");
 const app = express();
 const { body, validationResult } = require("express-validator");
 const { port, corsOrigin, jwtSecret } = require("./config");
+
 const server = app.listen(port, () => {
     console.clear();
     console.log(`Сервер запущен на http://localhost:${port}`);
@@ -11,7 +12,6 @@ const server = app.listen(port, () => {
 });
 const wss = new WebSocket.Server({ server });
 const clients = new Map();
-
 const { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage } = require("./db");
 
 app.use(cors({
