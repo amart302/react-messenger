@@ -1,18 +1,19 @@
-const WebSocket = require("ws");
-const express = require("express");
-const cors = require("cors");
-const app = express();
-const { body, validationResult } = require("express-validator");
-const { port, corsOrigin, jwtSecret } = require("./config");
+import { WebSocketServer, WebSocket } from "ws";
+import express from "express";
+import cors from "cors";
+import { body, validationResult} from "express-validator";
 
+import { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage } from "./db.js" ;
+import { corsOrigin, port } from "./config.js";
+
+const app = express();
 const server = app.listen(port, () => {
     console.clear();
     console.log(`Сервер запущен на http://localhost:${port}`);
     connect();
 });
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocketServer({ server });
 const clients = new Map();
-const { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage } = require("./db");
 
 app.use(cors({
     origin: corsOrigin,
@@ -91,6 +92,14 @@ const handleError = (ws, type, error) => {
     ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${type}` }));
 };
 
+const sendChatData = (connection, chatData) => {
+    if(connection && connection.readyState === WebSocket.OPEN){
+        connection.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
+    }else{
+        console.log(`Соединение с участником закрыто: ${chatData.participant1.userId}`);
+    }
+};
+
 wss.on("connection", (ws) => {
     console.log('Новое соединение установлено');
     ws.on("message", async (message) => {
@@ -133,17 +142,12 @@ wss.on("connection", (ws) => {
             case "ADD_NEW_MESSAGE":
                 try {
                     const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
-                    const updateChatData = await getChatData(data.chatId);
                     
-                    const participantConnection1 = await clients.get(updateChatData.participant1.userId.toString());
-                    const participantConnection2 = await clients.get(updateChatData.participant2.userId.toString());
-                    if(participantConnection1 && participantConnection1.readyState === WebSocket.OPEN){
-                        participantConnection1.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
-                    }
-                    if(participantConnection2 && participantConnection2.readyState === WebSocket.OPEN){
-                        participantConnection2.send(JSON.stringify({ type: "CHAT_DATA", payload: updateChatData}));
-                    }
-                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: updatedChatData}));
+                    const participantConnection1 = await clients.get(updatedChatData.participant1.userId.toString());
+                    const participantConnection2 = await clients.get(updatedChatData.participant2.userId.toString());
+                    
+                    sendChatData(participantConnection1, updatedChatData);
+                    sendChatData(participantConnection2, updatedChatData);
                 } catch (error) {
                     handleError(ws, data.type, error);
                 }

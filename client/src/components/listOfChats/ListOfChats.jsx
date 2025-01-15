@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 import "./listOfChats.css";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChatItem from "../chatItem/ChatItem";
 
@@ -71,16 +71,22 @@ export default function ListOfChats({ ws, scrollToBottom }){
                 {
                     (changingBlocks) ? (
                         (foundUser) ? (
-                            <ChatItem user={foundUser} onClick={() => createOrOpenChat(foundUser._id)} />
+                            <ChatItem key={foundUser.createdAt} user={foundUser} onClick={() => createOrOpenChat(foundUser._id)} />
                         ) : (<p>Пользователь не найден</p>)
                     ) : chats?.length ? (
                         chats.map(item => {
                             const partner = getChatPartner(item);
-                            if(partner){
-                                return (
-                                    <ChatItem key={partner._id} user={partner} onClick={() => createOrOpenChat(partner._id)} />
-                                )
+                            
+                            if (!partner) {
+                                return null;
                             }
+
+                            return (
+                                <React.Fragment key={partner.createdAt}>
+                                    <ChatItem user={partner} onClick={() => createOrOpenChat(partner._id)} />
+                                    <hr style={{ width: "90%", backgroundColor: "#B4ABAB" }}/>
+                                </React.Fragment>
+                            );
                             
                         })
                     ) : (<p>У вас пока нету чатов</p>)

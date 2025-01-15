@@ -3,6 +3,7 @@ import "./main.css";
 import { useEffect, useRef, useState } from "react";
 import ListOfChats from "../../components/listOfChats/ListOfChats";
 import { useDispatch, useSelector } from "react-redux";
+import EmojiSelector from "../../components/emojiSelector/EmojiSelector";
 
 export default function Main(){
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function Main(){
     const chatData = useSelector(state => state.chatData);
     const [ chatInterlocutor, setChatInterlocutor ] = useState(null);
     const [ inputMessage, setInputMessage ] = useState("");
+    const [ emojiSelectorStyles, setEmojiSelectorStyles ] = useState({ display: "none" });
     const ws = useRef(null);
     const blockRef = useRef(null);
 
@@ -54,6 +56,9 @@ export default function Main(){
                             break;
                         default:
                             console.log("Неизвестный тип сообщения:", data.type);
+                            dispatch({type: "CLEAR_USER"});
+                            dispatch({type: "CLEAR_CHAT"});
+                            navigate("/login");
                     }
                 } catch (error) {
                     console.error(error);
@@ -66,7 +71,7 @@ export default function Main(){
             };
 
             ws.current.onclose = () => {
-                console.log("Соединение закрыто");
+                reconnecting();
             };
 
             return () => {
@@ -106,6 +111,11 @@ export default function Main(){
                 count = 0;
             };
 
+            ws.current.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log("Получено от сервера:", data);
+            };
+
             ws.current.onclose = () => {
                 setTimeout(() => {
                     reconnecting();
@@ -120,12 +130,15 @@ export default function Main(){
     };
 
     const sendMessage = () => {
-        if(inputMessage){
-            ws.current.send(JSON.stringify({ type: "ADD_NEW_MESSAGE", chatId: chatData._id, user: { userId: user._id, username: user.username}, text: inputMessage }));
-            setInputMessage("");
-        }
+        ws.current.send(JSON.stringify({ type: "ADD_NEW_MESSAGE", chatId: chatData._id, user: { userId: user._id, username: user.username}, text: inputMessage }));
+        setInputMessage("");
     };
     
+    const closeEmojiSelector = () => {
+        if(emojiSelectorStyles.display == "none") setEmojiSelectorStyles({ display: "grid" });
+        else setEmojiSelectorStyles({ display: "none" });
+    };
+
     return(
         <div className="App">
             <ListOfChats ws={ws} scrollToBottom={scrollToBottom}/>
@@ -141,22 +154,34 @@ export default function Main(){
                                 {
                                     chatData?.messages?.map(item => (
                                         (item.username === user?.username) ?
-                                        <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px 10px 0 10px" }} >
+                                        <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px" }} key={item.createdAt} >
                                             <p>{item.text}</p>
                                         </div> :
-                                        <div className="message-container" style={{ marginRight: "auto", borderRadius: "10px 10px 10px 0" }} >
+                                        <div className="message-container" style={{ backgroundColor: "#E7E7E7", color: "#303030", marginRight: "auto", borderRadius: "10px" }} key={item.createdAt} >
                                             <p>{item.text}</p>
                                         </div>
                                     ))
                                 }
                             </div>
+                            <EmojiSelector inputMessage={inputMessage} setInputMessage={setInputMessage} emojiSelectorStyles={emojiSelectorStyles} setEmojiSelectorStyles={setEmojiSelectorStyles}/>
                             <div className="chat-footer">
                                 <div className="message-input-container">
-                                    <input type="text" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") sendMessage()}} onChange={(e) => {
+                                    <input type="text" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") {
+                                        if(inputMessage){
+                                            sendMessage();
+                                            if(emojiSelectorStyles.display == "grid") setEmojiSelectorStyles({ display: "none" });
+                                        }
+                                    }}} onChange={(e) => {
                                         const value = e.target.value;
                                         setInputMessage(value);
                                     }} />
-                                    <button onClick={() => sendMessage()}>Send</button>
+                                    <img src="./images/emojiSelectorIcon.svg" alt="" onClick={() => closeEmojiSelector()} />
+                                    <button onClick={() => {
+                                        if(inputMessage){
+                                            sendMessage();
+                                            if(emojiSelectorStyles.display == "grid") setEmojiSelectorStyles({ display: "none" });
+                                        }
+                                    }}>Send</button>
                                 </div>
                             </div>
                         </>
