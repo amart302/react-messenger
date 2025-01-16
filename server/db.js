@@ -46,7 +46,6 @@ export async function registerUser(username, email, password){
                 email: email,
                 password: hashedPassword,
                 chats: [],
-                chatSession: null,
                 createdAt: new Date()
             }
 
@@ -112,8 +111,13 @@ export async function findUser(username){
     }
 }
 
-export async function createChat(userId1, userId2){
+export async function createOrOpenChat(userId1, userId2, chatId = null){
     try {
+        if(chatId){
+            const foundChat = await chatsCollection.findOne({ _id: new ObjectId(chatId) });
+            return foundChat;
+        }
+
         const existingChat = await chatsCollection.findOne({
             $or: [
                 { "participant1.userId": new ObjectId(userId1), "participant2.userId": new ObjectId(userId2) },
@@ -161,8 +165,9 @@ export async function createChat(userId1, userId2){
                 chatId: newChat.insertedId,
                 participant1: participant1,
                 participant2: participant2
-            }}}
+            }}},
         );
+        
 
         await userCollection.findOneAndUpdate(
             { _id: new ObjectId(userId2) },

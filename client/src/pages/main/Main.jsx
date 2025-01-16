@@ -17,7 +17,6 @@ export default function Main(){
     const blockRef = useRef(null);
 
     const userId = JSON.parse(sessionStorage.getItem("userId"));
-    
     useEffect(() => {
         if(!userId){
             dispatch({type: "CLEAR_USER"});
@@ -142,10 +141,9 @@ export default function Main(){
     return(
         <div className="App">
             <ListOfChats ws={ws} scrollToBottom={scrollToBottom}/>
-            <main>
                 {
                     chatInterlocutor && (
-                        <>
+                        <main>
                             <div className="chat-header">
                                 <img src="./images/userAvatar.png" alt="" />
                                 {chatInterlocutor?.username}
@@ -163,7 +161,7 @@ export default function Main(){
                                     ))
                                 }
                             </div>
-                            <EmojiSelector inputMessage={inputMessage} setInputMessage={setInputMessage} emojiSelectorStyles={emojiSelectorStyles} setEmojiSelectorStyles={setEmojiSelectorStyles}/>
+                            <EmojiSelector inputMessage={inputMessage} setInputMessage={setInputMessage} emojiSelectorStyles={emojiSelectorStyles} />
                             <div className="chat-footer">
                                 <div className="message-input-container">
                                     <input type="text" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") {
@@ -184,11 +182,9 @@ export default function Main(){
                                     }}>Send</button>
                                 </div>
                             </div>
-                        </>
-                        
+                        </main>
                     )
                 }
-            </main>
         </div>
     )
 }

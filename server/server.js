@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { body, validationResult} from "express-validator";
 
-import { connect, registerUser, verificateUser, getUserData, findUser, createChat, getChatData, addNewMessage } from "./db.js" ;
+import { connect, registerUser, verificateUser, getUserData, findUser, createOrOpenChat, getChatData, addNewMessage } from "./db.js" ;
 import { corsOrigin, port } from "./config.js";
 
 const app = express();
@@ -78,7 +78,7 @@ app.get("/api/findUser", async (req, res) => {
 app.post("/api/createOrOpenChat", async (req, res) => {
     try {
         const { userId1, userId2 } = req.body;
-        const result = await createChat(userId1, userId2);
+        const result = await createOrOpenChat(userId1, userId2);
         
         res.status(201).json({ message: result.message, chatId: result.chatId });
     } catch (error) {
@@ -117,7 +117,7 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA":
                 try {
-                    const chatData = await createChat(data.userId1, data.userId2);
+                    const chatData = await createOrOpenChat(data.userId1, data.userId2);
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
                     handleError(ws, data.type, error);
@@ -125,7 +125,7 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA_BY_ID":
                 try {
-                    const chatData = await getChatData(data.chatId);                    
+                    const chatData = await createOrOpenChat(data.userId1, null, data.chatId );
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
                     handleError(ws, data.type, error);
