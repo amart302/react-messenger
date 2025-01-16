@@ -134,10 +134,13 @@ export default function Main(){
     };
     
     const closeEmojiSelector = () => {
-        if(emojiSelectorStyles.display == "none") setEmojiSelectorStyles({ display: "grid" });
+        if(emojiSelectorStyles.display === "none") setEmojiSelectorStyles({ display: "grid" });
         else setEmojiSelectorStyles({ display: "none" });
     };
-
+   
+    const handleEmojiSelect = (emoji) => {
+        console.log('Выбранный эмодзи:', emoji);
+      };
     return(
         <div className="App">
             <ListOfChats ws={ws} scrollToBottom={scrollToBottom}/>
@@ -167,7 +170,7 @@ export default function Main(){
                                     <input type="text" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") {
                                         if(inputMessage){
                                             sendMessage();
-                                            if(emojiSelectorStyles.display == "grid") setEmojiSelectorStyles({ display: "none" });
+                                            if(emojiSelectorStyles.display === "grid") setEmojiSelectorStyles({ display: "none" });
                                         }
                                     }}} onChange={(e) => {
                                         const value = e.target.value;
@@ -177,7 +180,7 @@ export default function Main(){
                                     <button onClick={() => {
                                         if(inputMessage){
                                             sendMessage();
-                                            if(emojiSelectorStyles.display == "grid") setEmojiSelectorStyles({ display: "none" });
+                                            if(emojiSelectorStyles.display === "grid") setEmojiSelectorStyles({ display: "none" });
                                         }
                                     }}>Send</button>
                                 </div>
