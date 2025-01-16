@@ -46,10 +46,6 @@ export default function ListOfChats({ ws, scrollToBottom }){
         }
     }
 
-    const getChatPartner = (chat) => {
-        if(user) return chat.participant1.username === user.username ? chat.participant2 : chat.participant1;
-    };
-
     return(
         <aside>
             <div className="search-container">
@@ -74,21 +70,11 @@ export default function ListOfChats({ ws, scrollToBottom }){
                             <ChatItem key={foundUser.createdAt} user={foundUser} onClick={() => createOrOpenChat(foundUser._id)} />
                         ) : (<p>Пользователь не найден</p>)
                     ) : chats?.length ? (
-                        chats.map(item => {
-                            const partner = getChatPartner(item);
-                            
-                            if (!partner) {
-                                return null;
-                            }
-
-                            return (
-                                <React.Fragment key={partner.createdAt}>
-                                    <ChatItem user={partner} onClick={() => createOrOpenChat(partner._id)} />
-                                    <hr style={{ width: "90%", backgroundColor: "#B4ABAB" }}/>
+                        chats.map(item => (
+                                <React.Fragment key={item.participant.userId}>
+                                    <ChatItem user={item.participant} onClick={() => createOrOpenChat(item.participant.userId)} />
                                 </React.Fragment>
-                            );
-                            
-                        })
+                        ))
                     ) : (<p>У вас пока нету чатов</p>)
                 }
             </div>

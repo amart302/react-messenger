@@ -17,6 +17,7 @@ export default function Main(){
     const blockRef = useRef(null);
 
     const userId = JSON.parse(sessionStorage.getItem("userId"));
+    
     useEffect(() => {
         if(!userId){
             dispatch({type: "CLEAR_USER"});
@@ -137,10 +138,7 @@ export default function Main(){
         if(emojiSelectorStyles.display === "none") setEmojiSelectorStyles({ display: "grid" });
         else setEmojiSelectorStyles({ display: "none" });
     };
-   
-    const handleEmojiSelect = (emoji) => {
-        console.log('Выбранный эмодзи:', emoji);
-      };
+
     return(
         <div className="App">
             <ListOfChats ws={ws} scrollToBottom={scrollToBottom}/>
@@ -164,7 +162,7 @@ export default function Main(){
                                     ))
                                 }
                             </div>
-                            <EmojiSelector inputMessage={inputMessage} setInputMessage={setInputMessage} emojiSelectorStyles={emojiSelectorStyles} />
+                            <EmojiSelector inputMessage={inputMessage} setInputMessage={setInputMessage} emojiSelectorStyles={emojiSelectorStyles} setEmojiSelectorStyles={setEmojiSelectorStyles}/>
                             <div className="chat-footer">
                                 <div className="message-input-container">
                                     <input type="text" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") {
@@ -186,6 +184,7 @@ export default function Main(){
                                 </div>
                             </div>
                         </main>
+                        
                     )
                 }
         </div>

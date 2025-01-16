@@ -35,7 +35,7 @@ main{
     gap: 10px;
     padding: 10px;
     overflow-y: auto;
-    border-block: solid 1px #231F20;
+    border-block: solid 1px #B4ABAB;
 }
 .message-container{
     background-color: #5300c0;
@@ -44,7 +44,7 @@ main{
     word-wrap: break-word;
     padding: 10px;
     line-height: 1.4;
-    font-size: 19px;
+    font-size: 20px;
     color: white;
 }
 .chat-footer{
@@ -73,7 +73,7 @@ main{
     height: 30px;
     border: none;
     outline: none;
-    font-size: 18px;
+    font-size: 20px;
 }
 .message-input-container button{
     height: 100%;

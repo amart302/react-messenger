@@ -1,73 +1,96 @@
-import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
 import { mongoURI } from "./config.js";
-import { userInfo } from "os";
+import mongoose, { Schema, Types } from "mongoose";
 
-const client = new MongoClient(mongoURI);
+const { ObjectId } = Types;
 
-let db;
-let userCollection;
-let chatsCollection;
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+    .then(() => console.log("Подключение к MongoDB успешно"))
+    .catch((err) => console.error("Ошибка подключения в MongoDB", err));
 
-export async function connect(){
-    try {
-        await client.connect();
-        db = client.db("messenger");
-        userCollection = db.collection("users");
-        chatsCollection = db.collection("chats");
-        console.log("Подключение к MongoDB  успешно");
-    } catch (error) {
-        console.error("Ошибка подключения в MongoDB", error);
-        process.exit(1);
+const userSchema = new Schema({
+    username: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    chats: [{ 
+        chatId: { type: ObjectId },
+        participant: {
+            userId: { type: ObjectId },
+            username: { type: String }
+        }
+    }],
+    createdAt: { type: Date, default: new Date() }
+});
+
+const chatSchema = new Schema({
+    participant1: {
+        userId: { type: ObjectId, required: true },
+        username: { type: String, required: true }
+    },
+    participant2: {
+        userId: { type: ObjectId, required: true },
+        username: { type: String, required: true }
+    },
+    messages: [{
+        userId: { type: ObjectId },
+        username: { type: String },
+        text: { type: String },
+        createdAt: { type: Date, default: new Date() }
+    }],
+    createdAt: { type: Date, default: new Date() }
+});
+
+const User = mongoose.model("User", userSchema);
+const Chat = mongoose.model("Chat", chatSchema);
+
+const createError = (message, code, field, originError = null) => {
+    const error = new Error(message);
+    error.code = code;
+    error.field = field;
+    if(originError){
+        error.keyPattern = originError.keyPattern;
+        error.keyValue = originError.keyValue;
     }
-}
-
+    return error;
+};
 
 export async function registerUser(username, email, password){
     try {
-        const existingUser = await userCollection.findOne({ 
-            $or : [{ email: email }, { username: username }]
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const newUser = new User({
+            username,
+            email,
+            password: hashedPassword,
+            chats: []
         });
 
-        if(existingUser){
-            const error = new Error(
-                existingUser.email === email 
-                    ? "Пользователь с таким почтой уже существует"
-                    : "Пользователь с таким ником уже существует"
-            );
-            error.statusCode = 409;
-            throw error;
-        }else{
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            const newUser = {
-                username: username,
-                email: email,
-                password: hashedPassword,
-                chats: [],
-                createdAt: new Date()
-            }
-
-            const result = await userCollection.insertOne(newUser);
-            return result.insertedId;
-        }
+        const savedUser = await newUser.save();
+        return savedUser._id;
     } catch (error) {
-        console.error("Ошибка при регистрации пользователя:", error);
-        throw error;
+        if(error.code === 11000){
+            if(error.keyPattern.username){
+                throw createError("Пользователь с таким ником уже существует", 409, "username", error);
+            }else if(error.keyPattern.email){
+                throw createError("Пользователь с такой почтой уже существует", 409, "email", error);
+            }
+        }else{
+            console.error("Ошибка при регистрации пользователя:", error);
+            throw error;
+        }
     }
-}
+};
 
 export async function verificateUser(email, password){
     try {
-        const foundUser = await userCollection.findOne({ email: email });
+        const foundUser = await User.findOne({ email: email });
         const isPasswordValid = (foundUser) ? await bcrypt.compare(password, foundUser.password) : null;
 
         if(!foundUser || !isPasswordValid){
-            
-            const error = new Error("Неправильный логин или пароль");
-            error.statusCode = 401;
-            throw error;
+            throw createError("Неправильный логин или пароль", 401, (!foundUser) ? "email" : "password");
         }else{
             return foundUser._id;
         }
@@ -75,50 +98,39 @@ export async function verificateUser(email, password){
         console.error("Ошибка при проверке пользователя:", error);
         throw error;
     }
-}
+};
 
 export async function getUserData(userId){
     try {
-        const foundUser = await userCollection.findOne({ _id: new ObjectId(userId) });
-        
+        const foundUser = await User.findOne({ _id: new Object(userId)});
         delete foundUser.password;
         return foundUser;
     } catch (error) {
         console.error("Ошибка при получении данных пользователя:", error);
         throw error;
     }
-}
+};
 
 export async function findUser(username){
     try {
-        const foundUser = await userCollection.findOne({ username: { $regex: new RegExp(username, "i") } });
-
-        if(foundUser){
+        const foundUser = await User.findOne({ username: { $regex: new RegExp(username, "i") } });
+        if(!foundUser){
+            throw createError("Пользователь не найден", 404, "username")
+        }else{
             ['email', 'password', 'chats'].forEach(item => {
                 delete foundUser[item];
             });
-
-            
             return foundUser;
-        }else{
-            const error = new Error("Пользователь не найден");
-            error.statusCode = 404;
-            throw error;
         }
     } catch (error) {
         console.error("Ошибка при поиске пользователя:", error);
         throw error;
     }
-}
+};
 
-export async function createOrOpenChat(userId1, userId2, chatId = null){
+export async function createorOpentChat(userId1, userId2){
     try {
-        if(chatId){
-            const foundChat = await chatsCollection.findOne({ _id: new ObjectId(chatId) });
-            return foundChat;
-        }
-
-        const existingChat = await chatsCollection.findOne({
+        const existingChat = await Chat.findOne({
             $or: [
                 { "participant1.userId": new ObjectId(userId1), "participant2.userId": new ObjectId(userId2) },
                 { "participant1.userId": new ObjectId(userId2), "participant2.userId": new ObjectId(userId1) }
@@ -130,76 +142,53 @@ export async function createOrOpenChat(userId1, userId2, chatId = null){
             return existingChat;
         }
 
-        const participant1 = await userCollection.findOne({ _id: new ObjectId(userId1) });
-        const participant2 = await userCollection.findOne({ _id: new ObjectId(userId2) });
-        
+        const participant1 = await User.findOne({ _id: new ObjectId(userId1) });
+        const participant2 = await User.findOne({ _id: new ObjectId(userId2) });
         if (!participant1 || !participant2) {
-            const error = new Error("Один из пользователей не найден");
-            error.statusCode = 404;
-            throw error;
+            throw createError("Один из пользователей не найден", 404, "id")
         }
 
-        ['email', 'password', 'chats'].forEach(item => {
-            delete participant1[item];
-            delete participant2[item];
-        });
-
-        const chat = {
+        const newChat = new Chat({
             participant1: {
                 userId: new ObjectId(userId1),
-                username: participant1.username,
+                username: participant1.username
             },
             participant2: {
                 userId: new ObjectId(userId2),
                 username: participant2.username
             },
-            messages: [],
-            createdAt: new Date()
-        };
-
-        const newChat = await chatsCollection.insertOne(chat);
-        
-        await userCollection.findOneAndUpdate(
-            { _id: new ObjectId(userId1) },
+            messages: []
+        });
+        const savedChat = await newChat.save();
+        await User.findByIdAndUpdate(
+            { _id: new Object(userId1) },
             { $push: { chats: {
-                chatId: newChat.insertedId,
-                participant1: participant1,
-                participant2: participant2
-            }}},
-        );
-        
-
-        await userCollection.findOneAndUpdate(
-            { _id: new ObjectId(userId2) },
+                chatId: savedChat._id,
+                participant: {
+                    userId: new ObjectId(userId2),
+                    username: participant2.username
+                }
+        }}});
+        await User.findByIdAndUpdate(
+            { _id: new Object(userId2) },
             { $push: { chats: {
-                chatId: newChat.insertedId,
-                participant1: participant1,
-                participant2: participant2
-            }}}
-        );
-        
+                chatId: savedChat._id,
+                participant: {
+                    userId: new ObjectId(userId1),
+                    username: participant1.username
+                }
+        }}});
         console.log("Чат успешно создан");
-        return chat;
+        return savedChat;
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;
     }
-}
-
-export async function getChatData(chatId){
-    try {
-        const foundChat = await chatsCollection.findOne({ _id: new ObjectId(chatId) });
-        
-        return foundChat;
-    } catch (error) {
-        console.error("Ошибка при поиске чата:", error);
-        throw error;
-    }
-}
+};
 
 export async function addNewMessage(chatId, userId, username, text){
     try {
-        const chatData = await chatsCollection.findOneAndUpdate(
+        const chatData = await Chat.findOneAndUpdate(
             { _id: new ObjectId(chatId) },
             { $push: { messages: {
                 userId: userId,
@@ -209,10 +198,9 @@ export async function addNewMessage(chatId, userId, username, text){
             }}},
             { returnDocument: "after" }
         );
-        
         return chatData;
     } catch (error) {
         console.error("Ошибка при добавлении сообщения:", error);
         throw error;
     }
-}
+};

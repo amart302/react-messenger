@@ -3,14 +3,14 @@ import express from "express";
 import cors from "cors";
 import { body, validationResult} from "express-validator";
 
-import { connect, registerUser, verificateUser, getUserData, findUser, createOrOpenChat, getChatData, addNewMessage } from "./db.js" ;
+import { registerUser, verificateUser, getUserData, findUser, createorOpentChat, addNewMessage } from "./db.js" ;
+
 import { corsOrigin, port } from "./config.js";
 
 const app = express();
 const server = app.listen(port, () => {
     console.clear();
     console.log(`Сервер запущен на http://localhost:${port}`);
-    connect();
 });
 const wss = new WebSocketServer({ server });
 const clients = new Map();
@@ -34,11 +34,10 @@ app.post("/api/loginData", [
     
     try {
         const result = await verificateUser(email, password);
-
         res.status(201).json({ message: "Данные получены успешно", redirect: "/", userId: result });
     } catch (error) {
-        if(!error.statusCode) error.statusCode = 500;
-        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
+        if(!error.code) error.code = 500;
+        res.status(error.code).json({ message: (error.code == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
 });
 
@@ -55,11 +54,10 @@ app.post("/api/registerData", [
 
     try {
         const result = await registerUser(username, email, password);
-        
         res.status(201).json({ message: "Данные получены успешно", redirect: "/", userId: result});
-    } catch (error) {
-        if(!error.statusCode) error.statusCode = 500;
-        res.status(error.statusCode).json({ message: (error.statusCode == 500) ? "Ошибка сервера при обработке данных" : error.message });
+    } catch (error) {        
+        if(!error.code) error.code = 500;
+        res.status(error.code).json({ message: (error.code == 500) ? "Ошибка сервера при обработке данных" : error.message });
     }
 });
 
@@ -78,7 +76,7 @@ app.get("/api/findUser", async (req, res) => {
 app.post("/api/createOrOpenChat", async (req, res) => {
     try {
         const { userId1, userId2 } = req.body;
-        const result = await createOrOpenChat(userId1, userId2);
+        const result = await createorOpentChat(userId1, userId2);
         
         res.status(201).json({ message: result.message, chatId: result.chatId });
     } catch (error) {
@@ -95,8 +93,6 @@ const handleError = (ws, type, error) => {
 const sendChatData = (connection, chatData) => {
     if(connection && connection.readyState === WebSocket.OPEN){
         connection.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
-    }else{
-        console.log(`Соединение с участником закрыто: ${chatData.participant1.userId}`);
     }
 };
 
@@ -117,7 +113,7 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA":
                 try {
-                    const chatData = await createOrOpenChat(data.userId1, data.userId2);
+                    const chatData = await createorOpentChat(data.userId1, data.userId2);
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
                     handleError(ws, data.type, error);
@@ -125,7 +121,7 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA_BY_ID":
                 try {
-                    const chatData = await createOrOpenChat(data.userId1, null, data.chatId );
+                    const chatData = await getChatData(data.chatId);                    
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
                     handleError(ws, data.type, error);
