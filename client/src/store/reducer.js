@@ -1,7 +1,7 @@
 const initialState = {
     user: null,
     chatData: null,
-    emojiPack: Array.from("😊😂😍🤔👍👏🙌💡🔥🎉💘💝💖💗💓💔💞💕💟✨😎🙏👀💬💭🚀🌈🍕🍦☕📚🎶📷🎁💌😢😡🤯🥳🤩😱🥺😇🤗😜🤪😏😴🤑🤠🥰😘🤓👻💀👾🤖🎃💩🙈🙉🙊🦄🐶🐱🐼🐧🦁🐨🦋🐝🌻🌞🌝🌚🌍🍀🍁🍂🍃🌸🌺🌼🌷⚡🌟🌠🎨📝📩📤📥🔍🔎🔐🔒🔓💤💢💣💥💦💨💫👣😁😆😅🤣😇🤠🥳🤡👽🤖")
+    emojiPack: Array.from("😊😂🤣😅😢😡🤯🥳🤩😱🥺😇🤗😜🤪😏😴🤑🤠🥰😘🤓😍🤔😁😆😇🤠🤡💀👽🤖👍👏🙌💡🔥🎉💘💝💖💗💓💔💞💕💟✨😎🙏👀💬💭🚀🌈🍕🍦☕📚🎶📷🎁💌👻👾🤖🎃💩🙈🙉🙊🦄🐶🐱🐼🐧🦁🐨🦋🐝🌻🌞🌝🌚🌍🍀🍁🍂🍃🌸🌺🌼🌷⚡🌟🌠🎨📝📩📤📥🔍🔎🔐🔒🔓💤💢💣💥💦💨💫👣")
 }
 
 export function reducer(state = initialState, action){

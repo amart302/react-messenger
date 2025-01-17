@@ -9,12 +9,14 @@ export default function EmojiSelector({ inputMessage, setInputMessage, emojiSele
     }
 
     return(
-        <div className="emoji-container" style={emojiSelectorStyles}>
-            {
-                emojiPack.map((item, index) => (
-                    <span key={index} onClick={() => addEmoji(item)}>{item}</span>
-                ))
-            }
+        <div className="emoji-container-parent" style={emojiSelectorStyles}>
+            <div className="emoji-container">
+                {
+                    emojiPack.map((item, index) => (
+                        <span key={index} onClick={() => addEmoji(item)}>{item}</span>
+                    ))
+                }
+            </div>
         </div>
     )
 }

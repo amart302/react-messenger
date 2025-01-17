@@ -83,7 +83,6 @@ const sendChatData = (connection, chatData) => {
     if(connection && connection.ws.readyState === WebSocket.OPEN && connection.activeChat){
         try {
             if(connection.activeChat.toString() == chatData._id.toString()){
-                console.log("Отправка данных через WebSocket:", chatData);
                 connection.ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData }));
             }
         } catch (error) {

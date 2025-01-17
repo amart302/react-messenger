@@ -38,6 +38,7 @@ main{
     border-block: solid 1px #B4ABAB;
 }
 .message-container{
+    font-family: 'Noto Color Emoji', sans-serif;
     background-color: #5300c0;
     max-width: 300px;
     width: fit-content;
@@ -86,6 +87,7 @@ main{
     border: none;
     outline: none;
     font-size: 20px;
+    font-family: 'Noto Color Emoji', sans-serif !important;
 }
 .message-input-container button{
     height: 100%;

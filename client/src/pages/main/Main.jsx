@@ -162,10 +162,10 @@ export default function Main(){
                                     chatData?.messages?.map(item => (
                                         (item.username === user?.username) ?
                                         <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px" }} key={item.createdAt} >
-                                            <p>{item.text}</p>
+                                            {item.text}
                                         </div> :
                                         <div className="message-container" style={{ backgroundColor: "#E7E7E7", color: "#303030", marginRight: "auto", borderRadius: "10px" }} key={item.createdAt} >
-                                            <p>{item.text}</p>
+                                            {item.text}
                                         </div>
                                     ))
                                 }
@@ -194,7 +194,6 @@ export default function Main(){
                                 </div>
                             </div>
                         </main>
-                        
                     )
                 }
         </div>
