@@ -65,7 +65,19 @@ main{
     border-radius: 6px;
     padding-left: 10px;
 }
-.message-input-container img{
+.emojiSelectorBtn{
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.1s;
+}
+.emojiSelectorBtn:hover{
+    background-color: rgb(221, 221, 221);
+}
+.emojiSelectorBtn img{
     height: 24px;
     cursor: pointer;
 }

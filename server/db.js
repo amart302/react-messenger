@@ -16,6 +16,7 @@ const userSchema = new Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     chats: [{ 
+        _id: false,
         chatId: { type: ObjectId },
         participant: {
             userId: { type: ObjectId },
@@ -27,10 +28,12 @@ const userSchema = new Schema({
 
 const chatSchema = new Schema({
     participant1: {
+        _id: false,
         userId: { type: ObjectId, required: true },
         username: { type: String, required: true }
     },
     participant2: {
+        _id: false,
         userId: { type: ObjectId, required: true },
         username: { type: String, required: true }
     },
@@ -102,8 +105,7 @@ export async function verificateUser(email, password){
 
 export async function getUserData(userId){
     try {
-        const foundUser = await User.findOne({ _id: new Object(userId)});
-        delete foundUser.password;
+        const foundUser = await User.findOne({ _id: new Object(userId)}).select("-password");
         return foundUser;
     } catch (error) {
         console.error("Ошибка при получении данных пользователя:", error);
@@ -113,13 +115,10 @@ export async function getUserData(userId){
 
 export async function findUser(username){
     try {
-        const foundUser = await User.findOne({ username: { $regex: new RegExp(username, "i") } });
+        const foundUser = await User.findOne({ username: { $regex: new RegExp(username, "i") } }).select("-email -password -chats -createdAt");
         if(!foundUser){
             throw createError("Пользователь не найден", 404, "username")
         }else{
-            ['email', 'password', 'chats'].forEach(item => {
-                delete foundUser[item];
-            });
             return foundUser;
         }
     } catch (error) {
@@ -182,6 +181,16 @@ export async function createorOpentChat(userId1, userId2){
         return savedChat;
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
+        throw error;
+    }
+};
+
+export async function getChatDataById(chatId){
+    try {
+        const chatData = await Chat.findOne({ _id: chatId });
+        return chatData;
+    } catch (error) {
+        console.error("Ошибка получении данных чата:", error);
         throw error;
     }
 };
