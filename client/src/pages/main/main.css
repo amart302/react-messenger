@@ -12,6 +12,9 @@ body{
     padding: 14px;
 }
 main{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     position: relative;
     background-color: white;
     padding: 20px;
@@ -23,6 +26,7 @@ main{
     gap: 10px;
     align-items: center;
     padding-inline: 10px;
+    border-bottom: solid 1px #B4ABAB;
 }
 .chat-header img{
     width: 50px;
@@ -33,9 +37,8 @@ main{
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 10px;
+    padding-inline: 10px;
     overflow-y: auto;
-    border-block: solid 1px #B4ABAB;
 }
 .message-container{
     font-family: 'Noto Color Emoji', sans-serif;
@@ -54,6 +57,7 @@ main{
     align-items: end;
     justify-content: center;
     padding-inline: 10px;
+    border-top: solid 1px #B4ABAB;
 }
 .message-input-container{
     height: 40px;
