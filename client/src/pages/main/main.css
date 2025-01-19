@@ -86,12 +86,14 @@ main{
     height: 24px;
     cursor: pointer;
 }
-.message-input-container input{
+.message-input-container input {
     height: 30px;
     border: none;
     outline: none;
     font-size: 20px;
-    font-family: 'Noto Color Emoji', sans-serif !important;
+    display: flex;
+    align-items: center;
+    font-family: 'Noto Color Emoji', sans-serif;
 }
 .message-input-container button{
     height: 100%;

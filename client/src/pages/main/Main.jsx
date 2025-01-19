@@ -33,7 +33,7 @@ export default function Main(){
 
     const webSocketLogic = (event) => {
         const data = JSON.parse(event.data);
-        console.log("Получено от сервера:", data);
+        console.log("Получено от сервера:", data.payload);
         
         switch(data.type){
             case "USER_DATA":
@@ -160,7 +160,7 @@ export default function Main(){
                             <div className="chat-main" ref={blockRef}>
                                 {
                                     chatData?.messages?.map(item => (
-                                        (item.username === user?.username) ?
+                                        (item.userId === user._id) ?
                                         <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px" }} key={item.createdAt} >
                                             {item.text}
                                         </div> :

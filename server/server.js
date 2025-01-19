@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { body, validationResult} from "express-validator";
 
-import { registerUser, verificateUser, getUserData, findUser, createorOpentChat, getChatDataById, addNewMessage } from "./db.js" ;
+import { registerUser, verificateUser, getUserData, findUser, createOrGetChat, getChatDataById, addNewMessage } from "./db.js" ;
 
 import { corsOrigin, port } from "./config.js";
 
@@ -110,9 +110,9 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA":
                 try {
-                    const chatData = await createorOpentChat(data.userId1, data.userId2);
+                    const chatData = await createOrGetChat(data.userId1, data.userId2);
                     const participantConnection1 = clients.get(data.userId1.toString()) || null;
-                    participantConnection1.activeChat = chatData._id;                    
+                    participantConnection1.activeChat = chatData._id;
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
                     handleError(ws, data.type, error);
@@ -138,12 +138,13 @@ wss.on("connection", (ws) => {
                 try {
                     const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
                     
-                    const participantConnection1 = clients.get(updatedChatData.participant1.userId.toString()) || null;
-                    const participantConnection2 = clients.get(updatedChatData.participant2.userId.toString()) || null;
+                    const participantConnection1 = clients.get(updatedChatData.participant1._id.toString()) || null;
+                    const participantConnection2 = clients.get(updatedChatData.participant2._id.toString()) || null;
                     
                     
                     if(participantConnection1) sendChatData(participantConnection1, updatedChatData);
-                    if(participantConnection2) sendChatData(participantConnection2, updatedChatData);                } catch (error) {
+                    if(participantConnection2) sendChatData(participantConnection2, updatedChatData);
+                } catch (error) {
                     handleError(ws, data.type, error);
                 }
                 break;

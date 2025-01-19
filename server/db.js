@@ -15,35 +15,20 @@ const userSchema = new Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    chats: [{ 
-        _id: false,
-        chatId: { type: ObjectId },
-        participant: {
-            userId: { type: ObjectId },
-            username: { type: String }
-        }
-    }],
-    createdAt: { type: Date, default: new Date() }
+    chats: [{ type: ObjectId, ref: "Chat", _id: false }],
+    createdAt: { type: Date, default: () => new Date() }
 });
 
 const chatSchema = new Schema({
-    participant1: {
-        _id: false,
-        userId: { type: ObjectId, required: true },
-        username: { type: String, required: true }
-    },
-    participant2: {
-        _id: false,
-        userId: { type: ObjectId, required: true },
-        username: { type: String, required: true }
-    },
+    participant1: { type: ObjectId, required: true, ref: "User" },
+    participant2: { type: ObjectId, required: true, ref: "User" },
     messages: [{
-        userId: { type: ObjectId },
-        username: { type: String },
-        text: { type: String },
-        createdAt: { type: Date, default: new Date() }
+        userId: { type: ObjectId, required: true },
+        username: { type: ObjectId, required: true },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: () => new Date() }
     }],
-    createdAt: { type: Date, default: new Date() }
+    createdAt: { type: Date, default: () => new Date() }
 });
 
 const User = mongoose.model("User", userSchema);
@@ -105,7 +90,15 @@ export async function verificateUser(email, password){
 
 export async function getUserData(userId){
     try {
-        const foundUser = await User.findOne({ _id: new Object(userId)}).select("-password");
+        const foundUser = await User.findOne({ _id: new Object(userId)}).select("-password")
+            .populate({
+                path: "chats",
+                select: "-messages",
+                populate: [
+                    { path: "participant1", select: "username" },
+                    { path: "participant2", select: "username" },
+                ]
+            });
         return foundUser;
     } catch (error) {
         console.error("Ошибка при получении данных пользователя:", error);
@@ -127,58 +120,49 @@ export async function findUser(username){
     }
 };
 
-export async function createorOpentChat(userId1, userId2){
+export async function createOrGetChat(userId1, userId2){
     try {
-        const existingChat = await Chat.findOne({
-            $or: [
-                { "participant1.userId": new ObjectId(userId1), "participant2.userId": new ObjectId(userId2) },
-                { "participant1.userId": new ObjectId(userId2), "participant2.userId": new ObjectId(userId1) }
-            ]
-        });
+        const chat = await Chat.findOne(
+            {
+                $or: [
+                    { "participant1": new ObjectId(userId1), "participant2": new ObjectId(userId2) },
+                    { "participant1": new ObjectId(userId2), "participant2": new ObjectId(userId1) }
+                ]
+            },
+        ).populate([
+                { path: "participant1", select: "username" },
+                { path: "participant2", select: "username" },
+        ]);
 
-        if(existingChat){
+        if(chat){
             console.log("Чат уже существует");
-            return existingChat;
+            return chat;
         }
-
-        const participant1 = await User.findOne({ _id: new ObjectId(userId1) });
-        const participant2 = await User.findOne({ _id: new ObjectId(userId2) });
-        if (!participant1 || !participant2) {
-            throw createError("Один из пользователей не найден", 404, "id")
-        }
-
+        const participant1 = new Types.ObjectId(userId1);
+        const participant2 = new Types.ObjectId(userId2);
         const newChat = new Chat({
-            participant1: {
-                userId: new ObjectId(userId1),
-                username: participant1.username
-            },
-            participant2: {
-                userId: new ObjectId(userId2),
-                username: participant2.username
-            },
+            participant1,
+            participant2,
             messages: []
         });
         const savedChat = await newChat.save();
-        await User.findByIdAndUpdate(
-            { _id: new Object(userId1) },
-            { $push: { chats: {
-                chatId: savedChat._id,
-                participant: {
-                    userId: new ObjectId(userId2),
-                    username: participant2.username
-                }
-        }}});
-        await User.findByIdAndUpdate(
-            { _id: new Object(userId2) },
-            { $push: { chats: {
-                chatId: savedChat._id,
-                participant: {
-                    userId: new ObjectId(userId1),
-                    username: participant1.username
-                }
-        }}});
+        
+        await User.findOneAndUpdate(
+            { _id: new ObjectId(userId1)},
+            { $push: { chats: savedChat._id } },
+        );
+    
+        await User.findOneAndUpdate(
+            { _id: new ObjectId(userId2)},
+            { $push: { chats: savedChat._id } },
+        );
+        const populatedChat = await Chat.findById(savedChat._id)
+            .populate([
+                { path: "participant1", select: "username" },
+                { path: "participant2", select: "username" },
+            ]);
         console.log("Чат успешно создан");
-        return savedChat;
+        return populatedChat;
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;
@@ -187,7 +171,15 @@ export async function createorOpentChat(userId1, userId2){
 
 export async function getChatDataById(chatId){
     try {
-        const chatData = await Chat.findOne({ _id: chatId });
+        const chatData = await Chat.findOne({ _id: chatId })
+            .populate({
+                path: "chats",
+                populate: [
+                    { path: "participant1.userId", select: "username" },
+                    { path: "participant2.userId", select: "username" },
+                    { path: "messages.userId", select: "username" }
+                ]
+            });
         return chatData;
     } catch (error) {
         console.error("Ошибка получении данных чата:", error);
@@ -200,13 +192,14 @@ export async function addNewMessage(chatId, userId, username, text){
         const chatData = await Chat.findOneAndUpdate(
             { _id: new ObjectId(chatId) },
             { $push: { messages: {
-                userId: userId,
-                username: username,
+                userId: new ObjectId(userId),
                 text: text,
-                createdAt: new Date()
             }}},
             { returnDocument: "after" }
-        );
+        ).populate([
+            { path: "participant1", select: "username" },
+            { path: "participant2", select: "username" },
+        ]);
         return chatData;
     } catch (error) {
         console.error("Ошибка при добавлении сообщения:", error);

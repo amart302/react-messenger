@@ -32,15 +32,17 @@ export default function ListOfChats({ ws, scrollToBottom }){
         }
     };
 
-    const createOrOpenChat = async (id) => {
+    const createOrGetChat = (id) => {
         if(foundUser) if(user._id === id) return;
+        console.log(id, user._id);
         
         try {
-            ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
             scrollToBottom();
             if(ws.current && ws.current.readyState === WebSocket.OPEN){
                 ws.current.send(JSON.stringify({ type: "GET_CHAT_DATA", userId1: user._id, userId2: id }));
             }
+            setInputValue("");
+            ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
         } catch (error) {
             console.error("Ошибка при попытке создать чат:", error);
         }
@@ -51,7 +53,7 @@ export default function ListOfChats({ ws, scrollToBottom }){
             <div className="search-container">
                 <div className="search-input-wrapper">
                     <img src="./images/magnifier.svg" alt="" className="search-icon" />
-                    <input type="text" onKeyDown={(e) => {if(e.key === "Enter") findUser()}} onChange={(e) => {
+                    <input type="text" value={inputValue} onKeyDown={(e) => {if(e.key === "Enter") findUser()}} onChange={(e) => {
                         const value = e.target.value.trim();
                         setInputValue(value);
                         if(!value){
@@ -64,17 +66,20 @@ export default function ListOfChats({ ws, scrollToBottom }){
                 </div>
             </div>
             <div className="chats-section">
-                {
+            {
                     (changingBlocks) ? (
                         (foundUser) ? (
-                            <ChatItem key={foundUser.createdAt} user={foundUser} onClick={() => createOrOpenChat(foundUser._id)} />
+                            <ChatItem key={foundUser.createdAt} user={foundUser} onClick={() => createOrGetChat(foundUser._id)} />
                         ) : (<p>Пользователь не найден</p>)
                     ) : chats?.length ? (
-                        chats.map(item => (
-                                <React.Fragment key={item.participant.userId}>
-                                    <ChatItem user={item.participant} onClick={() => createOrOpenChat(item.participant.userId)} />
+                        chats.map(item => {
+                            const participant = item.participant1._id == user._id ? item.participant2 : item.participant1;                            
+                            return (
+                                <React.Fragment key={participant._id}>
+                                    <ChatItem user={participant} onClick={() => createOrGetChat(participant._id)} />
                                 </React.Fragment>
-                        ))
+                            )
+                        })
                     ) : (<p>У вас пока нету чатов</p>)
                 }
             </div>
