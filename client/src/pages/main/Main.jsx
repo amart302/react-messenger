@@ -18,16 +18,10 @@ export default function Main(){
     const blockRef = useRef(null);
 
     const userId = JSON.parse(sessionStorage.getItem("userId"));
-
-    const redirect = () => {
-        dispatch({type: "CLEAR_USER"});
-        dispatch({type: "CLEAR_CHAT"});
-        navigate("/login");
-    };
     
     useEffect(() => {
         if(!userId){
-            redirect();
+            navigate("/login");
         }
     }, [userId, dispatch, navigate]);
 
@@ -51,7 +45,7 @@ export default function Main(){
                 break;
             default:
                 console.log("Неизвестный тип сообщения:", data.type);
-                redirect();
+                navigate("/login");
         }
     };
 
@@ -74,7 +68,7 @@ export default function Main(){
         }else{
             console.log("Превышено количество попыток переподключения. Перенаправление на страницу входа.");
             setTimeout(() => {
-                redirect();
+                navigate("/login");
             }, 1000);
         }
     };

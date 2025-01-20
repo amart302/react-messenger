@@ -34,15 +34,13 @@ export default function ListOfChats({ ws, scrollToBottom }){
 
     const createOrGetChat = (id) => {
         if(foundUser) if(user._id === id) return;
-        console.log(id, user._id);
-        
         try {
             scrollToBottom();
             if(ws.current && ws.current.readyState === WebSocket.OPEN){
                 ws.current.send(JSON.stringify({ type: "GET_CHAT_DATA", userId1: user._id, userId2: id }));
             }
             setInputValue("");
-            ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
+            setChangingBlocks(false);
         } catch (error) {
             console.error("Ошибка при попытке создать чат:", error);
         }
@@ -57,7 +55,6 @@ export default function ListOfChats({ ws, scrollToBottom }){
                         const value = e.target.value.trim();
                         setInputValue(value);
                         if(!value){
-                            ws.current.send(JSON.stringify({ type: "UPDATE_USER_DATA", userId: user._id }));
                             setFoundUser(null);
                             setChangingBlocks(false);
                         }
@@ -73,7 +70,7 @@ export default function ListOfChats({ ws, scrollToBottom }){
                         ) : (<p>Пользователь не найден</p>)
                     ) : chats?.length ? (
                         chats.map(item => {
-                            const participant = item.participant1._id == user._id ? item.participant2 : item.participant1;                            
+                            const participant = item.participant1._id == user._id ? item.participant2 : item.participant1;
                             return (
                                 <React.Fragment key={participant._id}>
                                     <ChatItem user={participant} onClick={() => createOrGetChat(participant._id)} />

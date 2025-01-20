@@ -20,6 +20,10 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
 
 app.post("/api/loginData", [
     body("email").isEmail().withMessage("Некорректный email"),
@@ -76,14 +80,25 @@ app.get("/api/findUser", async (req, res) => {
 
 const handleError = (ws, type, error) => {
     console.error(`Ошибка при обработке запроса ${type}:`, error);
-    ws.send(JSON.stringify({ type: "ERROR", payload: `Ошибка при обработке запроса ${type}` }));
+    ws.send(JSON.stringify({ 
+        type: "ERROR", 
+        payload: { message: `Ошибка при обработке запроса ${type}`, details: error.message }
+    }));
 };
 
-const sendChatData = (connection, chatData) => {
-    if(connection && connection.ws.readyState === WebSocket.OPEN && connection.activeChat){
+const sendData = async (connection, type, data) => {
+    if(connection && connection.ws.readyState === WebSocket.OPEN){
         try {
-            if(connection.activeChat.toString() == chatData._id.toString()){
-                connection.ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData }));
+            switch(type){
+                case "CHAT_DATA":
+                    if(connection.activeChat?.toString() == data._id.toString()){
+                        connection.ws.send(JSON.stringify({ type: type, payload: data }));
+                    }
+                    break;
+                case "USER_DATA":
+                    const userData = await getUserData(data);
+                    if(userData) connection.ws.send(JSON.stringify({ type: type, payload: userData }));
+                    break;
             }
         } catch (error) {
             console.error("Ошибка при отправке данных через WebSocket:", error);
@@ -95,9 +110,11 @@ const sendChatData = (connection, chatData) => {
 
 wss.on("connection", (ws) => {
     console.log('Новое соединение установлено');
+    let participantConnection1 = null;
+    let participantConnection2 = null;
     ws.on("message", async (message) => {
+        console.log(`Получено сообщение: ${message}`);
         const data = JSON.parse(message);
-        
         switch(data.type){
             case "GET_USER_DATA":
                 try {
@@ -111,39 +128,23 @@ wss.on("connection", (ws) => {
             case "GET_CHAT_DATA":
                 try {
                     const chatData = await createOrGetChat(data.userId1, data.userId2);
-                    const participantConnection1 = clients.get(data.userId1.toString()) || null;
+                    participantConnection1 = clients.get(data.userId1.toString()) || null;
+                    participantConnection2 = clients.get(data.userId2.toString()) || null;
+                    
+                    if(participantConnection1) sendData(participantConnection1, "USER_DATA", data.userId1.toString());
+                    if(participantConnection2) sendData(participantConnection2, "USER_DATA", data.userId2.toString());
                     participantConnection1.activeChat = chatData._id;
                     ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
                 } catch (error) {
                     handleError(ws, data.type, error);
                 }
                 break;
-            case "GET_CHAT_DATA_BY_ID":
-                try {
-                    const chatData = await getChatDataById(data.chatId);
-                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
-                } catch (error) {
-                    handleError(ws, data.type, error);
-                }
-                break;
-            case "UPDATE_USER_DATA":
-                try {
-                    const updatedUserData = await getUserData(data.userId);
-                    ws.send(JSON.stringify({ type: "USER_UPDATED", payload: updatedUserData }));
-                } catch (error) {
-                    handleError(ws, data.type, error);
-                }
-                break;
             case "ADD_NEW_MESSAGE":
                 try {
-                    const updatedChatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
+                    const chatData = await addNewMessage(data.chatId, data.user.userId, data.user.username, data.text);
                     
-                    const participantConnection1 = clients.get(updatedChatData.participant1._id.toString()) || null;
-                    const participantConnection2 = clients.get(updatedChatData.participant2._id.toString()) || null;
-                    
-                    
-                    if(participantConnection1) sendChatData(participantConnection1, updatedChatData);
-                    if(participantConnection2) sendChatData(participantConnection2, updatedChatData);
+                    if(participantConnection1) sendData(participantConnection1, "CHAT_DATA", chatData);
+                    if(participantConnection2) sendData(participantConnection2, "CHAT_DATA", chatData);
                 } catch (error) {
                     handleError(ws, data.type, error);
                 }
@@ -155,6 +156,11 @@ wss.on("connection", (ws) => {
 
     ws.on("close", () => {
         console.log("Клиент отключился");
-        clients.delete(ws);
+        for (const [userId, connection] of clients.entries()) {
+            if (connection.ws === ws) {
+                clients.delete(userId);
+                break;
+            }
+        }
     });
 });

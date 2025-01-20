@@ -16,6 +16,7 @@ export default function AuthForms(){
     useEffect(() => {
         sessionStorage.setItem("userId", null);
         dispatch({type: "CLEAR_USER"});
+        dispatch({type: "CLEAR_CHAT"});
     }, []);
     
     const onSubmitLogin = async (data) => {
