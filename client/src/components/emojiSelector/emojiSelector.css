@@ -30,7 +30,6 @@
     cursor: pointer;
     border-radius: 50%;
     transition: all 0.1s;
-    font-family: 'Noto Color Emoji', sans-serif;
 }
 .emoji-container span:hover{
     background-color: rgb(209, 209, 209);

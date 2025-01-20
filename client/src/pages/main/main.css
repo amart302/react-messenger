@@ -93,7 +93,7 @@ main{
     font-size: 20px;
     display: flex;
     align-items: center;
-    font-family: 'Noto Color Emoji', sans-serif;
+    /* font-family: 'Noto Color Emoji', sans-serif; */
 }
 .message-input-container button{
     height: 100%;

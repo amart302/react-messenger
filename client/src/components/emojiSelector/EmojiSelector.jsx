@@ -1,5 +1,6 @@
 import "./emojiSelector.css";
 import { useSelector } from "react-redux";
+import { Twemoji } from "react-emoji-render";
 
 export default function EmojiSelector({ inputMessage, setInputMessage, emojiSelectorStyles}){
     const emojiPack = useSelector(state => state.emojiPack);
@@ -13,7 +14,7 @@ export default function EmojiSelector({ inputMessage, setInputMessage, emojiSele
             <div className="emoji-container">
                 {
                     emojiPack.map((item, index) => (
-                        <span key={index} onClick={() => addEmoji(item)}>{item}</span>
+                        <Twemoji text={item} key={index} onClick={() => addEmoji(item)} />
                     ))
                 }
             </div>
