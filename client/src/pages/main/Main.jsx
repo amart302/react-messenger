@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import ListOfChats from "../../components/listOfChats/ListOfChats";
 import { useDispatch, useSelector } from "react-redux";
 import EmojiSelector from "../../components/emojiSelector/EmojiSelector";
+import { Twemoji } from "react-emoji-render";
 import "./main.css";
 
 
@@ -156,10 +157,10 @@ export default function Main(){
                                     chatData?.messages?.map(item => (
                                         (item.userId === user._id) ?
                                         <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px" }} key={item.createdAt} >
-                                            {item.text}
+                                            <Twemoji text={item.text} />
                                         </div> :
                                         <div className="message-container" style={{ backgroundColor: "#E7E7E7", color: "#303030", marginRight: "auto", borderRadius: "10px" }} key={item.createdAt} >
-                                            {item.text}
+                                            <Twemoji text={item.text} />
                                         </div>
                                     ))
                                 }

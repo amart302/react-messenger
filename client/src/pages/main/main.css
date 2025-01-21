@@ -41,7 +41,6 @@ main{
     overflow-y: auto;
 }
 .message-container{
-    font-family: 'Noto Color Emoji', sans-serif;
     background-color: #5300c0;
     max-width: 300px;
     width: fit-content;
@@ -93,7 +92,6 @@ main{
     font-size: 20px;
     display: flex;
     align-items: center;
-    /* font-family: 'Noto Color Emoji', sans-serif; */
 }
 .message-input-container button{
     height: 100%;
