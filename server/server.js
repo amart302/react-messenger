@@ -38,7 +38,7 @@ app.post("/api/loginData", [
     
     try {
         const result = await verificateUser(email, password);
-        res.status(201).json({ message: "Данные получены успешно", redirect: "/", userId: result });
+        res.status(201).json({ message: "Данные получены успешно", userId: result });
     } catch (error) {
         if(!error.code) error.code = 500;
         res.status(error.code).json({ message: (error.code == 500) ? "Ошибка сервера при обработке данных" : error.message });
@@ -58,7 +58,7 @@ app.post("/api/registerData", [
 
     try {
         const result = await registerUser(username, email, password);
-        res.status(201).json({ message: "Данные получены успешно", redirect: "/", userId: result});
+        res.status(201).json({ message: "Данные получены успешно", userId: result});
     } catch (error) {        
         if(!error.code) error.code = 500;
         res.status(error.code).json({ message: (error.code == 500) ? "Ошибка сервера при обработке данных" : error.message });
@@ -127,14 +127,14 @@ wss.on("connection", (ws) => {
                 break;
             case "GET_CHAT_DATA":
                 try {
-                    const chatData = await createOrGetChat(data.userId1, data.userId2);
+                    const chat = await createOrGetChat(data.userId1, data.userId2);
                     participantConnection1 = clients.get(data.userId1.toString()) || null;
                     participantConnection2 = clients.get(data.userId2.toString()) || null;
                     
-                    if(participantConnection1) sendData(participantConnection1, "USER_DATA", data.userId1.toString());
-                    if(participantConnection2) sendData(participantConnection2, "USER_DATA", data.userId2.toString());
-                    participantConnection1.activeChat = chatData._id;
-                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chatData}));
+                    if(participantConnection1 && !chat.exists) sendData(participantConnection1, "USER_DATA", data.userId1.toString());
+                    if(participantConnection2 && !chat.exists) sendData(participantConnection2, "USER_DATA", data.userId2.toString());
+                    participantConnection1.activeChat = chat.data._id;
+                    ws.send(JSON.stringify({ type: "CHAT_DATA", payload: chat.data}));
                 } catch (error) {
                     handleError(ws, data.type, error);
                 }

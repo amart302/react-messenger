@@ -136,7 +136,7 @@ export async function createOrGetChat(userId1, userId2){
 
         if(chat){
             console.log("Чат уже существует");
-            return chat;
+            return {data: chat, exists: true};
         }
         const participant1 = new Types.ObjectId(userId1);
         const participant2 = new Types.ObjectId(userId2);
@@ -162,7 +162,7 @@ export async function createOrGetChat(userId1, userId2){
                 { path: "participant2", select: "username" },
             ]);
         console.log("Чат успешно создан");
-        return populatedChat;
+        return {data: populatedChat, exists: false};
     } catch (error) {
         console.error("Ошибка при попытке создать чат:", error);
         throw error;

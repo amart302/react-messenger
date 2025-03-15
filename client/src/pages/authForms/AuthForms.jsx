@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-
-import "./authForms.css";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { Toaster, toast } from "sonner";
+import axios from "axios";
+import "./authForms.css";
+
 
 export default function AuthForms(){
     const navigate = useNavigate();
@@ -15,8 +16,8 @@ export default function AuthForms(){
 
     useEffect(() => {
         sessionStorage.setItem("userId", null);
-        dispatch({type: "CLEAR_USER"});
-        dispatch({type: "CLEAR_CHAT"});
+        dispatch({type: "CLEAR_USER_DATA"});
+        dispatch({type: "CLEAR_CHAT_DATA"});
     }, []);
     
     const onSubmitLogin = async (data) => {
@@ -27,7 +28,8 @@ export default function AuthForms(){
         try {
             const response = await axios.post("http://localhost:8080/api/loginData", data);
             sessionStorage.setItem("userId", JSON.stringify(response.data.userId));
-            setTimeout(() => navigate(response.data.redirect), 400);
+            toast.success("Успешный вход");
+            setTimeout(() => navigate("/"), 800);
         } catch (error) {
             if(error.response){
                 setErrorMessage(error.response.data.message);
@@ -47,7 +49,8 @@ export default function AuthForms(){
         try {
             const response = await axios.post("http://localhost:8080/api/registerData", data);
             sessionStorage.setItem("userId", JSON.stringify(response.data.userId));
-            setTimeout(() => navigate(response.data.redirect), 400);
+            toast.success("Успешная регистрация");
+            setTimeout(() => navigate("/"), 800);
         } catch (error) {
             if(error.response){
                 setErrorMessage(error.response.data.message);
@@ -59,6 +62,7 @@ export default function AuthForms(){
 
     return(
         <div className="forms-container">
+            <Toaster richColors position="top-center" />
             {
                 !switchingForms && 
                 <form onSubmit={handleSubmit(onSubmitLogin)}>

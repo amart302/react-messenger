@@ -38,9 +38,6 @@ export default function Main(){
                 dispatch({ type: "SAVE_CHAT_DATA", payload: data.payload });
                 scrollToBottom();
                 break;
-            case "USER_UPDATED":
-                dispatch({ type: "SAVE_USER_DATA", payload: data.payload });
-                break;
             case "NEW_MESSAGE":
                 dispatch({ type: "SAVE_CHAT_DATA", payload: data.payload });
                 break;
@@ -108,7 +105,6 @@ export default function Main(){
 
     useEffect(() => {
         setupWebSocket();
-        return () => cleanupWebSocket();
     }, [dispatch]);
 
     useEffect(() => {

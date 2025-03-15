@@ -7,11 +7,11 @@ export function reducer(state = initialState, action){
     switch(action.type){
         case "SAVE_USER_DATA":
             return { ...state, user: action.payload };
-        case "CLEAR_USER":
+        case "CLEAR_USER_DATA":
             return{ ...state, user: null };
         case "SAVE_CHAT_DATA":
             return { ...state, chatData: action.payload };
-        case "CLEAR_CHAT":
+        case "CLEAR_CHAT_DATA":
             return { ...state, chatData: null };
         default:
             return state;

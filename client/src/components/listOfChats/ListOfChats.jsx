@@ -3,6 +3,7 @@ import "./listOfChats.css";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChatItem from "../chatItem/ChatItem";
+import { Toaster, toast } from "sonner";
 
 export default function ListOfChats({ ws, scrollToBottom }){
     const user = useSelector(state => state.user);
@@ -48,6 +49,7 @@ export default function ListOfChats({ ws, scrollToBottom }){
 
     return(
         <aside>
+            <Toaster richColors position="top-center" />
             <div className="search-container">
                 <div className="search-input-wrapper">
                     <img src="./images/magnifier.svg" alt="" className="search-icon" />
