@@ -3,13 +3,10 @@
     margin-inline: auto;
     display: grid;
     grid-template-columns: 0.5fr 1fr;
-    gap: 20px;
 }
 body{
     display: flex;
     flex-direction: column;
-    background-color: #e9faff;
-    padding: 14px;
 }
 main{
     display: flex;
@@ -17,7 +14,6 @@ main{
     gap: 10px;
     position: relative;
     background-color: white;
-    padding: 20px;
     border-radius: 10px;
 }
 .chat-header{
@@ -33,22 +29,30 @@ main{
 }
 .chat-main{
     position: relative;
-    height: calc(100vh - 224px);
+    height: calc(100vh - 178px);
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-inline: 10px;
+    padding-inline: 20px;
     overflow-y: auto;
 }
 .message-container{
-    background-color: #5300c0;
+    position: relative;
+    background-color: rgb(119, 119, 119);
     max-width: 300px;
     width: fit-content;
     word-wrap: break-word;
-    padding: 10px;
+    padding: 10px 50px 10px 10px;
     line-height: 1.4;
     font-size: 20px;
     color: white;
+}
+.sending-time{
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    opacity: 0.7;
+    font-size: 12px;
 }
 .chat-footer{
     height: 62px;
@@ -89,7 +93,7 @@ main{
     height: 30px;
     border: none;
     outline: none;
-    font-size: 20px;
+    font-size: 17px;
     display: flex;
     align-items: center;
 }

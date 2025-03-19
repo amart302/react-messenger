@@ -16,7 +16,7 @@ const userSchema = new Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     chats: [{ type: ObjectId, ref: "Chat", _id: false }],
-    createdAt: { type: Date, default: () => new Date() }
+    createdAt: { type: Date, default: () => Date.now() }
 });
 
 const chatSchema = new Schema({
@@ -26,9 +26,9 @@ const chatSchema = new Schema({
         userId: { type: ObjectId, required: true },
         username: { type: ObjectId, required: true },
         text: { type: String, required: true },
-        createdAt: { type: Date, default: () => new Date() }
+        createdAt: { type: Date, default: () => Date.now() }
     }],
-    createdAt: { type: Date, default: () => new Date() }
+    createdAt: { type: Date, default: () => Date.now() }
 });
 
 const User = mongoose.model("User", userSchema);

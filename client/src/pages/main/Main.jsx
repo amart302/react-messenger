@@ -24,6 +24,7 @@ export default function Main(){
         if(!userId){
             navigate("/login");
         }
+        setupWebSocket();
     }, [userId, dispatch, navigate]);
 
     const webSocketLogic = (event) => {
@@ -77,7 +78,7 @@ export default function Main(){
 
         ws.current.onopen = () => {
             console.log("Подключено к серверу");
-            if(ws.current && ws.current.readyState == WebSocket.OPEN){
+            if(ws.current && ws.current.readyState === WebSocket.OPEN){
                 if(userId){
                     ws.current.send(JSON.stringify({ type: "GET_USER_DATA", userId: userId }));
                 }
@@ -102,10 +103,6 @@ export default function Main(){
             reconnecting();
         };
     }
-
-    useEffect(() => {
-        setupWebSocket();
-    }, [dispatch]);
 
     useEffect(() => {
         if (chatData && user) {
@@ -137,7 +134,14 @@ export default function Main(){
         else setEmojiSelectorStyles({ display: "none" });
     };
 
-    
+    const convertTime = (time) => {
+        
+        const date = new Date(time);
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
     return(
         <div className="App">
             <ListOfChats ws={ws} scrollToBottom={scrollToBottom}/>
@@ -152,11 +156,13 @@ export default function Main(){
                                 {
                                     chatData?.messages?.map(item => (
                                         (item.userId === user._id) ?
-                                        <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px" }} key={item.createdAt} >
+                                        <div className="message-container" style={{ marginLeft: "auto", borderRadius: "10px 0 10px 10px" }} key={item.createdAt} >
                                             <Twemoji text={item.text} />
+                                            <p className="sending-time">{convertTime(item.createdAt)}</p>
                                         </div> :
-                                        <div className="message-container" style={{ backgroundColor: "#E7E7E7", color: "#303030", marginRight: "auto", borderRadius: "10px" }} key={item.createdAt} >
+                                        <div className="message-container" style={{ marginRight: "auto", borderRadius: "0 10px 10px 10px" }} key={item.createdAt} >
                                             <Twemoji text={item.text} />
+                                            <p className="sending-time">{convertTime(item.createdAt)}</p>
                                         </div>
                                     ))
                                 }
@@ -164,7 +170,7 @@ export default function Main(){
                             <EmojiSelector inputMessage={inputMessage} setInputMessage={setInputMessage} emojiSelectorStyles={emojiSelectorStyles} setEmojiSelectorStyles={setEmojiSelectorStyles}/>
                             <div className="chat-footer">
                                 <div className="message-input-container">
-                                    <input type="text" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") {
+                                    <input type="text" placeholder="Введите сообщение" value={inputMessage} onKeyDown={(e) => {if(e.key === "Enter") {
                                         if(inputMessage){
                                             sendMessage();
                                             if(emojiSelectorStyles.display === "grid") setEmojiSelectorStyles({ display: "none" });

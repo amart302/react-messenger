@@ -1,5 +1,4 @@
 import "./emojiSelector.css";
-import { useSelector } from "react-redux";
 import { Twemoji } from "react-emoji-render";
 
 export default function EmojiSelector({ inputMessage, setInputMessage, emojiSelectorStyles}){

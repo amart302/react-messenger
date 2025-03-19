@@ -72,7 +72,7 @@ export default function ListOfChats({ ws, scrollToBottom }){
                         ) : (<p>Пользователь не найден</p>)
                     ) : chats?.length ? (
                         chats.map(item => {
-                            const participant = item.participant1._id == user._id ? item.participant2 : item.participant1;
+                            const participant = item.participant1._id === user._id ? item.participant2 : item.participant1;
                             return (
                                 <React.Fragment key={participant._id}>
                                     <ChatItem user={participant} onClick={() => createOrGetChat(participant._id)} />
